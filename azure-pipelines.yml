@@ -24,7 +24,7 @@ steps:
   displayName: 'Install dependencies'
 
 - script: |
-    export VITE_API_URL=https://cdsi-backend-final-ajhxc8ehgucvdndq.eastasia-01.azurewebsites.net
+    export VITE_API_URL=https://cdsi-3kq1.onrender.com
     pnpm --filter cdsi-platform build
   displayName: 'Build frontend'
 

@@ -87,6 +87,10 @@ const allowedOrigins = [
   "http://localhost:5173",
 ];
 
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL.replace(/\/+$/, ""));
+}
+
 app.use(
   cors({
     origin(origin, callback) {
@@ -95,7 +99,12 @@ app.use(
         return callback(null, true);
       }
 
-      if (allowedOrigins.includes(origin)) {
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith(".onrender.com") ||
+        origin.endsWith(".vercel.app") ||
+        origin.endsWith(".netlify.app")
+      ) {
         return callback(null, true);
       }
 

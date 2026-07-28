@@ -28,7 +28,7 @@ export default defineConfig({
   },
   define: {
     'import.meta.env.VITE_API_URL': JSON.stringify(
-      process.env.VITE_API_URL || 'http://localhost:8080',
+      process.env.VITE_API_URL || 'https://cdsi-3kq1.onrender.com',
     ),
   },
 });
