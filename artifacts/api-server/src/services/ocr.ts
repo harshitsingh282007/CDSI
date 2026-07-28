@@ -145,34 +145,45 @@ async function ocrPdfPages(filePath: string, fileName: string, pageCount: number
 }
 
 async function ocrImage(imgPath: string, fileName: string, page: number): Promise<string> {
-  try {
+  const ocrPromise = (async () => {
     try {
-      const sharp = (await import("sharp")).default;
-      const processedPath = imgPath.replace(/\.png$/, "_processed.png");
-      await sharp(imgPath)
-        .rotate()
-        .normalize()
-        .sharpen()
-        .toFile(processedPath);
-      fs.renameSync(processedPath, imgPath);
-    } catch {
-      // sharp not available
-    }
+      try {
+        const sharp = (await import("sharp")).default;
+        const processedPath = imgPath.replace(/\.png$/, "_processed.png");
+        await sharp(imgPath)
+          .rotate()
+          .normalize()
+          .sharpen()
+          .toFile(processedPath);
+        fs.renameSync(processedPath, imgPath);
+      } catch {
+        // sharp not available
+      }
 
-    const Tesseract = await import("tesseract.js");
-    const worker = await Tesseract.createWorker("eng");
-    const { data } = await worker.recognize(imgPath);
-    await worker.terminate();
+      const Tesseract = await import("tesseract.js");
+      const worker = await Tesseract.createWorker("eng");
+      const { data } = await worker.recognize(imgPath);
+      await worker.terminate();
 
-    const confidence = data.confidence ?? 0;
-    if (confidence < 60) {
-      return `[DOC: ${fileName} | PAGE: ${page} | LOW_QUALITY: confidence ${confidence.toFixed(0)}%]\n${data.text}\n\n`;
+      const confidence = data.confidence ?? 0;
+      if (confidence < 60) {
+        return `[DOC: ${fileName} | PAGE: ${page} | LOW_QUALITY: confidence ${confidence.toFixed(0)}%]\n${data.text}\n\n`;
+      }
+      return `[DOC: ${fileName} | PAGE: ${page}]\n${data.text}\n\n`;
+    } catch (e) {
+      logger.warn({ e }, "Tesseract OCR failed");
+      return `[DOC: ${fileName} | PAGE: ${page} | OCR_UNAVAILABLE]\n`;
     }
-    return `[DOC: ${fileName} | PAGE: ${page}]\n${data.text}\n\n`;
-  } catch (e) {
-    logger.warn({ e }, "Tesseract OCR failed");
-    return `[DOC: ${fileName} | PAGE: ${page} | OCR_UNAVAILABLE]\n`;
-  }
+  })();
+
+  const timeoutPromise = new Promise<string>((resolve) => {
+    setTimeout(() => {
+      logger.warn({ fileName, page }, "OCR timed out after 15s");
+      resolve(`[DOC: ${fileName} | PAGE: ${page} | OCR_TIMEOUT]\n`);
+    }, 15000);
+  });
+
+  return Promise.race([ocrPromise, timeoutPromise]);
 }
 
 async function extractDocxText(filePath: string, fileName: string): Promise<OcrResult> {

@@ -54,7 +54,7 @@ interface AIResponse {
 
 type ChatMessage = { role: string; content: string };
 
-const TIMEOUT_MS = 45_000;
+const TIMEOUT_MS = 25_000;
 const STREAM_READ_IDLE_MS = 30_000;
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
