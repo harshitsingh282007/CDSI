@@ -1,0 +1,10 @@
+{
+  "buildCommand": "npx pnpm@10.34.5 --filter @workspace/cdsi-platform build",
+  "outputDirectory": "dist/public",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
