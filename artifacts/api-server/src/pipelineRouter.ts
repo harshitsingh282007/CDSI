@@ -118,13 +118,20 @@ async function* parseSSETokens(body: ReadableStream<Uint8Array>): AsyncGenerator
 
 // ── Core AI call (non-streaming) ────────────────────────────────────────────
 
+const GEMINI_MODELS = [
+  "gemini-1.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-pro",
+  "gemini-2.5-flash",
+];
+
 async function callProvider(
   prompt: string,
   systemPrompt: string,
   language: string,
   jsonMode: boolean
 ): Promise<AIResponse> {
-  const { apiKey, baseUrl, model } = getAIConfig();
+  const { apiKey, baseUrl, model: configuredModel } = getAIConfig();
 
   if (!apiKey) {
     return { content: "", error: "AI_API_KEY not configured. Set AI_API_KEY, AI_BASE_URL, and AI_MODEL environment variables.", partial: true };
@@ -134,52 +141,58 @@ async function callProvider(
   }
 
   const url = getCompletionsUrl(baseUrl);
-  const maxRetries = 3;
+  
+  // Build a list of models to try (primary model first, followed by fallbacks)
+  const modelsToTry = [configuredModel];
+  for (const m of GEMINI_MODELS) {
+    if (!modelsToTry.includes(m)) modelsToTry.push(m);
+  }
+
   let lastError = "";
 
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    if (attempt > 0) {
-      const delayMs = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
-      logger.info({ attempt, delayMs, model }, "Retrying AI call due to transient error");
-      await new Promise((r) => setTimeout(r, delayMs));
-    }
+  for (const currentModel of modelsToTry) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (attempt > 0) {
+        await new Promise((r) => setTimeout(r, 1000));
+      }
 
-    try {
-      const res = await withTimeout(
-        fetch(url, {
-          method: "POST",
-          headers: authHeaders(apiKey),
-          body: JSON.stringify({
-            model,
-            messages: withSystemPrompt(systemPrompt, languageInstruction(language), [
-              { role: "user", content: prompt },
-            ]),
-            temperature: jsonMode ? 0.1 : 0.3,
-            max_tokens: 4096,
-            ...(jsonMode ? { response_format: { type: "json_object" } } : {}),
+      try {
+        const res = await withTimeout(
+          fetch(url, {
+            method: "POST",
+            headers: authHeaders(apiKey),
+            body: JSON.stringify({
+              model: currentModel,
+              messages: withSystemPrompt(systemPrompt, languageInstruction(language), [
+                { role: "user", content: prompt },
+              ]),
+              temperature: jsonMode ? 0.1 : 0.3,
+              max_tokens: 4096,
+              ...(jsonMode ? { response_format: { type: "json_object" } } : {}),
+            }),
           }),
-        }),
-        TIMEOUT_MS
-      );
+          TIMEOUT_MS
+        );
 
-      if (res.ok) {
-        return { content: extractChatContent(await res.json()) };
+        if (res.ok) {
+          return { content: extractChatContent(await res.json()) };
+        }
+
+        const err = await res.text();
+        lastError = `AI API error: ${res.status} ${err}`;
+        logger.warn({ model: currentModel, status: res.status, attempt, err }, "AI provider call failed");
+
+        // If 503 (High Demand) or 429 (Rate Limit) or 5xx, try next attempt or switch to fallback model
+        if (res.status === 503 || res.status === 429 || res.status >= 500) {
+          continue;
+        }
+
+        return { content: "", error: lastError, partial: true };
+      } catch (e: unknown) {
+        const msg = errorMessage(e);
+        lastError = `AI call failed: ${msg}`;
+        logger.warn({ model: currentModel, msg, attempt }, "AI provider call threw exception");
       }
-
-      const err = await res.text();
-      lastError = `AI API error: ${res.status} ${err}`;
-      logger.warn({ model, status: res.status, attempt, err }, "AI provider call failed");
-
-      // Retry on transient status codes (503 High Demand, 429 Rate Limit, 5xx Server Errors)
-      if (res.status === 503 || res.status === 429 || res.status >= 500) {
-        continue;
-      }
-
-      return { content: "", error: lastError, partial: true };
-    } catch (e: unknown) {
-      const msg = errorMessage(e);
-      lastError = `AI call failed: ${msg}`;
-      logger.warn({ model, msg, attempt }, "AI provider call threw exception");
     }
   }
 
