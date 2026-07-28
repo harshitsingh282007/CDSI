@@ -1,139 +1,168 @@
-# CDSI - Clinical Decision Support Intelligence
+# CDSI — Clinical Decision Support Intelligence
 
-> AI-powered clinical report analysis platform that transforms raw medical documents, lab reports, and prescriptions into structured, actionable clinical insights - with multi-language support and a PDF export.
+> **The Universal Health Passport & Multi-Agent Clinical Operating System.**  
+> An AI-powered health platform that transforms raw medical documents, lab panels, radiology scans, and prescriptions into structured, actionable clinical insights—accessible via Web, Mobile, and 1/1 NFC Smart Cards.
 
----
-
-## Overview
-
-CDSI is a full-stack healthcare AI platform built for clinicians and medical professionals. Upload any medical document - lab reports, prescriptions, imaging summaries, intake forms - and CDSI's AI pipeline extracts, structures, and analyses the data to produce a comprehensive clinical decision support report.
-
-The platform is designed to **assist** licensed healthcare professionals, not replace them. All outputs carry clear AI-generated disclaimers and are structured for fast clinical review.
+[![Live POC](https://img.shields.io/badge/Live_POC-www.cdsi.in-0070F3?style=for-the-badge&logo=react)](http://www.cdsi.in/)
+[![Demo Key](https://img.shields.io/badge/Demo_Access_Key-1234567812345678-green?style=for-the-badge)](http://www.cdsi.in/)
+[![Build Velocity](https://img.shields.io/badge/POC_Build_Time-72_Hours-orange?style=for-the-badge)]()
 
 ---
 
-## Key Features
+## 🌟 Overview
 
-### AI-Powered Analysis
-- Extracts lab parameters, findings, prescriptions, and organ system data from raw PDF/text documents
-- Generates a structured **Risk Assessment** (Low / Moderate / High / Critical) with urgency classification
-- Identifies **Possible Conditions** and differential diagnoses
-- Produces a **Clinical Conclusion** narrative summary
-- Suggests **Next Steps** and actionable recommendations
-- Psychiatric scoring integration - **PHQ-9** and **GAD-7** with interpretation
+**CDSI (Clinical Decision Support Intelligence)** is a full-stack healthcare AI platform designed to solve the critical problem of medical record fragmentation and communication latency during care. 
 
-### Interactive Report Dashboard
-- **Risk Gauge Chart** - radial bar visualisation of overall risk level
-- **Lab Donut Chart** - distribution of normal / abnormal / critical / low values
-- **Lab Panel Chart** - stacked bar chart grouped by panel (CBC, Metabolic, etc.)
-- **Confidence Chart** - horizontal bar chart for finding confidence scores
-- **Organ System Chart** - status breakdown across all organ systems
-- Summary stats row: total labs, abnormal count, critical flags, confirmed findings
+Built in a **72-hour development sprint**, CDSI introduces a **zero-friction "Dump & Auto-Separate" multi-agent upload pipeline**. Patients, laboratories, doctors, and hospitals can upload any document format (scanned PDFs, physical paper photos, DICOM summaries, handwritten notes), and a team of specialized autonomous agents automatically classifies, extracts, and indexes the data into a unified **Universal Health Passport**.
 
-### Professional PDF Export
-- Full multi-page A4 report with dark branded header/footer
-- Cover page with Risk Assessment banner (colour-coded by severity)
-- 4-stat summary dashboard (lab count, abnormal, critical, findings)
-- Possible conditions as pill tags
-- Next steps with numbered circles
-- Organ system grid cards
-- Complete lab results table with panel sub-labels and status colour coding
-- Prescriptions with dosage, frequency, and special instructions
-- Psychiatric score progress bars
-- Regulatory disclaimer block
-- Page numbers on every page
-
-### 20-Language Support
-Full UI translation across all pages in:
-English · Arabic · French · Spanish · German · Portuguese · Hindi · Urdu · Chinese (Simplified) · Japanese · Korean · Russian · Turkish · Italian · Dutch · Polish · Bengali · Swahili · Persian · Malay
-
-### Patient Intake
-- Structured intake form capturing demographics, chief complaint, history, medications, allergies, and lifestyle
-- Feeds patient context into the AI pipeline for more accurate analysis
+The platform provides **Dual-View Outputs**:
+1. **Patient View:** Plain-English summaries, visual risk gauges, and out-of-range lab anomaly flags to eliminate medical jargon and anxiety.
+2. **Clinician View:** High-density clinical tables, ICD-10 coding prompts, differential diagnosis suggestions, and drug-interaction warnings.
 
 ---
 
-## Tech Stack
+## 🔄 Multi-Agent Ingestion Pipeline ("Dump & Auto-Separate")
+
+Instead of forcing users to manually select document types or fill out clunky drop-down menus, CDSI routes all uploaded content through an autonomous **Multi-Agent Architecture**:
+
+                         ┌─────────────────────────┐
+                         │    Raw Document Drop    │
+                         │ (PDF, Photo, Scan, CSV) │
+                         └────────────┬────────────┘
+                                      │
+                                      ▼
+                         ┌────────────┴────────────┐
+                         │   Router Orchestrator   │
+                         │  (Classifies & Routes)  │
+                         └────────────┬────────────┘
+                                      │
+      ┌───────────────┬───────────────┼───────────────┬───────────────┐
+      ▼               ▼               ▼               ▼               ▼
+┌───────────┐   ┌───────────┐   ┌───────────┐   ┌───────────┐   ┌───────────┐
+│ Lab Panel │   │ Rx/Pharma │   │ Radiology │   │ Discharge │   │ Anti-Fraud│
+│   Agent   │   │   Agent   │   │   Agent   │   │   Agent   │   │ ClaimAgnt │
+└─────┬─────┘   └─────┬─────┘   └─────┬─────┘   └─────┬─────┘   └─────┬─────┘
+      │               │               │               │               │
+      └───────────────┴───────────────┴───────────────┴───────────────┘
+                                      │
+                      │ Post-Separation & Structuring │
+                                      ▼
+                         ┌─────────────────────────┐
+                         │    Universal Patient    │
+                         │     Health Passport     │
+                         └─────────────────────────┘
+
+
+### Specialized Subagent Breakdown:
+* 🧪 **Lab Panel Agent:** Extracts numerical lab metrics (HbA1c, Lipid Panels, CBC, TSH), reference ranges, and flags critical anomalies in red.
+* 💊 **Rx & Pharma Agent:** Extracts prescribed medications, dosages, refill frequencies, and performs real-time **Drug-Drug Interaction** checks against existing active meds.
+* 🩻 **Radiology Agent:** Extracts clinical conclusions from MRI, CT, and X-ray report narratives (e.g., *"L4-L5 disc bulge"*).
+* 📋 **Discharge & Operative Agent:** Structures surgical notes, ICD-10 diagnosis codes, post-op instructions, and follow-up timelines.
+* 🛡️ **Anti-Fraud & Verification Agent:** Validates digital signatures from accredited labs/hospitals to eliminate tampered records and duplicate billing.
+
+---
+
+## 🚀 4-Phase Product Progression Roadmap
+
+CDSI is evolving from an immediate software wedge into a global healthcare hardware-software network:
+
+### Phase 1: Web & Mobile AI Parsing Engine *(LIVE V0 POC — Current Stage)*
+* Live web portal at [`www.cdsi.in`](http://www.cdsi.in/) (Demo Access Key: `1234567812345678`).
+* Mobile-responsive interface walkthrough (`Latest V0 Mobile Interface.MP4`).
+* V2 Multi-Page Report Export engine generating structured PDF downloads.
+* 20-Language international UI translation system.
+
+### Phase 2: Domain-Trained BioMedical AI Model *(In Progress)*
+* Replacing generic foundation models with a fine-tuned biomedical LLM trained on PubMed, ClinicalTrials.gov, WHO, and FDA drug interaction registries.
+* **Grounding via RAG (Retrieval-Augmented Generation)** over verified medical literature for 100% factual, zero-hallucination outputs.
+
+### Phase 3: 1/1 NFC Smart Health Passport Cards *(Next Milestone)*
+* **"Tap-and-Go" Emergency Triage:** Encrypted physical NFC cards for patients, doctors, labs, and hospitals with unique 1/1 identifiers.
+* **Dual-Layer Access:** 
+  * *On-Chip (Offline):* Critical emergency data (Blood Group, Severe Allergies, Chronic Conditions, Emergency Contacts) readable by EMTs without internet access.
+  * *Cloud-Synced (Online):* Authenticated smartphone tap loads the patient's complete historical medical ledger.
+
+### Phase 4: Global Anti-Fraud & Verified Medical Registry
+* Immutable lab result signing directly into the patient's 1/1 profile by accredited diagnostic centers.
+* Complete elimination of record fragmentation, lost physical binders, and redundant $500+ diagnostic re-testing across hospital networks.
+
+---
+
+## ✨ Core Features & Visual Dashboards
+
+### 1. Interactive Clinical Dashboard
+* **Risk Assessment Gauge:** Radial and severity-based visualization of patient risk status.
+* **Lab Anomaly Distribution:** Donut charts grouping Normal vs. Abnormal vs. Critical lab flags.
+* **Organ System Status Grid:** Visual status breakdown across major organ systems (Cardiovascular, Metabolic, Renal, Respiratory, etc.).
+* **Psychiatric Screening Integration:** Built-in scoring and tracking for **PHQ-9** and **GAD-7** instruments.
+
+### 2. Multi-Page Professional PDF Export (V2 Format)
+* Full multi-page A4 report generation server-side using PDFKit.
+* Color-coded Risk Assessment cover banner.
+* Summary statistics row (Total Labs, Abnormal Count, Critical Flags, Confirmed Findings).
+* Organ system grid cards and complete lab tables with reference sub-labels.
+* Regulatory disclaimer block and automated page numbering.
+
+### 3. 20-Language Internationalization
+Full UI and report translation support across:
+> English · Arabic · French · Spanish · German · Portuguese · Hindi · Urdu · Chinese (Simplified) · Japanese · Korean · Russian · Turkish · Italian · Dutch · Polish · Bengali · Swahili · Persian · Malay
+
+---
+
+## 🛠️ Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18, Vite, Tailwind CSS, Wouter Router |
-| Charts | Recharts 2.x |
-| State / Data | TanStack Query v5, React Context |
-| Backend | Node.js, Express, esbuild |
-| AI - Extraction | OpenAI-compatible API (e.g. DeepSeek, OpenAI, Gemini) |
-| AI - Reasoning | OpenAI-compatible API (e.g. DeepSeek, OpenAI, Gemini) |
-| PDF Generation | PDFKit (server-side) |
-| PDF Parsing | pdf-parse v2 |
-| Monorepo | pnpm workspaces |
+| **Frontend** | React 18, Vite, Tailwind CSS, Wouter Router |
+| **Data & State** | TanStack Query v5, React Context (CDSIContext) |
+| **Data Visualization** | Recharts 2.x |
+| **Backend** | Node.js, Express, esbuild |
+| **Multi-Agent Pipeline** | Custom Orchestrator + Specialized Extraction/Reasoning Subagents |
+| **AI Processing** | OpenAI-compatible Multimodal Vision & Reasoning APIs |
+| **PDF Generation** | PDFKit (Server-Side) |
+| **PDF Parsing** | pdf-parse v2 |
+| **Monorepo Management** | pnpm Workspaces |
 
 ---
 
-## Project Structure
+## 📂 Project Structure
 
-```
 CDSI-AI/
 ├── artifacts/
-│   ├── cdsi-platform/          # React + Vite frontend
+│   ├── cdsi-platform/                   # React 18 + Vite Frontend App
 │   │   └── src/
 │   │       ├── pages/
-│   │       │   ├── Upload.tsx        # Document upload
-│   │       │   ├── Intake.tsx        # Patient intake form
-│   │       │   ├── Processing.tsx    # Real-time analysis progress
-│   │       │   ├── Report.tsx        # Interactive report + charts
-│   │       │   └── Settings.tsx      # Language & system settings
+│   │       │   ├── Upload.tsx            # Multi-agent document upload dropzone
+│   │       │   ├── Intake.tsx            # Structured patient demographics & history
+│   │       │   ├── Processing.tsx        # Real-time multi-agent processing progress
+│   │       │   ├── Report.tsx            # Dual-view interactive report + charts
+│   │       │   └── Settings.tsx          # 20-Language & portal settings
 │   │       ├── context/
-│   │       │   └── CDSIContext.tsx   # Global state (language, report, session)
-│   │       └── translations.ts      # 20-language translation system
-│   └── api-server/             # Express backend
+│   │       │   └── CDSIContext.tsx       # Global state (Language, Session, Report)
+│   │       └── translations.ts          # 20-Language translation engine
+│   └── api-server/                      # Express Backend Server
 │       └── src/
 │           ├── routes/
-│           │   ├── analysis.ts       # POST /api/analyse - starts pipeline
-│           │   ├── export.ts         # POST /api/export-report - PDF generation
-│           │   └── status.ts         # GET /api/status/:jobId - polling
+│           │   ├── analysis.ts           # POST /api/analyse - Multi-agent pipeline trigger
+│           │   ├── export.ts             # POST /api/export-report - PDF export generator
+│           │   └── status.ts             # GET /api/status/:jobId - Async status polling
 │           ├── services/
-│           │   ├── pdfExport.ts      # Full report PDF builder
-│           │   ├── extractionService.ts    # AI extraction pipeline
-│           │   └── clinicalReasoningService.ts    # AI reasoning pipeline
+│           │   ├── pdfExport.ts          # Multi-page PDF report builder
+│           │   ├── extractionService.ts  # Multi-agent entity extraction
+│           │   └── clinicalReasoningService.ts # AI risk & reasoning pipeline
 │           └── types/
-│               └── report.ts         # Shared ClinicalReport schema
+│               └── report.ts             # Shared ClinicalReport schema
 └── package.json
-```
+
 
 ---
 
-## How It Works
+## 🔒 Security & Medical Disclaimer
 
-```
-1. Upload  →  Patient uploads a PDF or text medical document
-2. Intake  →  Optional: fill in patient demographics & history
-3. Process →  AI pipeline extracts & structures all clinical data
-                 ├── Extraction AI: lab values, prescriptions, findings
-                 └── Reasoning AI:  risk assessment, conditions, conclusion
-4. Report  →  Interactive dashboard with charts & full clinical report
-5. Export  →  Download a professional multi-page PDF
-```
-
-The backend uses a polling architecture - the frontend polls `/api/status/:jobId` every 1.5 seconds and displays smooth animated progress until analysis is complete.
+> **CDSI is a Clinical Decision Support tool intended solely to assist licensed healthcare professionals and empower patients.** It does not constitute a formal medical diagnosis or treatment plan. All AI-generated findings must be independently reviewed and verified by a qualified clinician before any clinical action is taken.
 
 ---
 
-## Clinical Data Extracted
+*Built with high velocity for the future of global digital health.*
 
-| Category | Details |
-|---|---|
-| Lab Parameters | Name, value, unit, reference range, status (normal/high/low/critical), panel grouping |
-| Clinical Findings | Finding text, category (confirmed/differential/recommendation), confidence %, reasoning |
-| Prescriptions | Medicine name, dosage, frequency, duration, timing, special instructions |
-| Organ Systems | System name, status, summary |
-| Risk Assessment | Level (low/moderate/high/critical), reasoning, urgency |
-| Possible Conditions | Differential diagnosis list |
-| Clinical Conclusion | AI-generated narrative summary |
-| Next Steps | Actionable recommendation list |
-| Psychiatric Scores | PHQ-9, GAD-7 scores with interpretation |
-
----
-
-## Disclaimer
-
-> **CDSI is a clinical decision support tool intended solely to assist licensed healthcare professionals.** It does not constitute a medical diagnosis, treatment plan, or clinical opinion. All AI-generated findings must be independently reviewed and verified by a qualified clinician before any clinical action is taken.
+                         
