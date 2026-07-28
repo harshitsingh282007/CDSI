@@ -134,38 +134,56 @@ async function callProvider(
   }
 
   const url = getCompletionsUrl(baseUrl);
+  const maxRetries = 3;
+  let lastError = "";
 
-  try {
-    const res = await withTimeout(
-      fetch(url, {
-        method: "POST",
-        headers: authHeaders(apiKey),
-        body: JSON.stringify({
-          model,
-          messages: withSystemPrompt(systemPrompt, languageInstruction(language), [
-            { role: "user", content: prompt },
-          ]),
-          temperature: jsonMode ? 0.1 : 0.3,
-          max_tokens: 4096,
-          ...(jsonMode ? { response_format: { type: "json_object" } } : {}),
-        }),
-      }),
-      TIMEOUT_MS
-    );
-
-    if (res.ok) {
-      return { content: extractChatContent(await res.json()) };
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    if (attempt > 0) {
+      const delayMs = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+      logger.info({ attempt, delayMs, model }, "Retrying AI call due to transient error");
+      await new Promise((r) => setTimeout(r, delayMs));
     }
 
-    const err = await res.text();
-    const finalErr = `AI API error: ${res.status} ${err}`;
-    logger.error({ model, status: res.status, err }, "AI provider call failed");
-    return { content: "", error: finalErr, partial: true };
-  } catch (e: unknown) {
-    const msg = errorMessage(e);
-    logger.error({ model, msg }, "AI provider call threw exception");
-    return { content: "", error: `AI call failed: ${msg}`, partial: true };
+    try {
+      const res = await withTimeout(
+        fetch(url, {
+          method: "POST",
+          headers: authHeaders(apiKey),
+          body: JSON.stringify({
+            model,
+            messages: withSystemPrompt(systemPrompt, languageInstruction(language), [
+              { role: "user", content: prompt },
+            ]),
+            temperature: jsonMode ? 0.1 : 0.3,
+            max_tokens: 4096,
+            ...(jsonMode ? { response_format: { type: "json_object" } } : {}),
+          }),
+        }),
+        TIMEOUT_MS
+      );
+
+      if (res.ok) {
+        return { content: extractChatContent(await res.json()) };
+      }
+
+      const err = await res.text();
+      lastError = `AI API error: ${res.status} ${err}`;
+      logger.warn({ model, status: res.status, attempt, err }, "AI provider call failed");
+
+      // Retry on transient status codes (503 High Demand, 429 Rate Limit, 5xx Server Errors)
+      if (res.status === 503 || res.status === 429 || res.status >= 500) {
+        continue;
+      }
+
+      return { content: "", error: lastError, partial: true };
+    } catch (e: unknown) {
+      const msg = errorMessage(e);
+      lastError = `AI call failed: ${msg}`;
+      logger.warn({ model, msg, attempt }, "AI provider call threw exception");
+    }
   }
+
+  return { content: "", error: lastError, partial: true };
 }
 
 // ── Streaming AI call ───────────────────────────────────────────────────────
