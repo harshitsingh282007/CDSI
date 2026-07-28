@@ -2,7 +2,7 @@ services:
   - type: web
     name: cdsi-api-server
     env: node
-    buildCommand: corepack enable && pnpm install && pnpm --filter @workspace/api-server build
+    buildCommand: npx pnpm@10.34.5 install --no-frozen-lockfile && npx pnpm@10.34.5 --filter @workspace/api-server build
     startCommand: node artifacts/api-server/dist/index.mjs
     envVars:
       - key: NODE_ENV
