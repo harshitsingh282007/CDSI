@@ -1,0 +1,6 @@
+# Ignore source and build scripts, but do not ignore dist/
+src/
+tests/
+tsconfig.json
+build.mjs
+.env*

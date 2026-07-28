@@ -1,0 +1,605 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: CDSI Platform - Clinical Decision Support Intelligence API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: upload
+    description: Document upload and processing
+  - name: analysis
+    description: Clinical analysis and reasoning
+  - name: report
+    description: Report generation and retrieval
+  - name: chat
+    description: Conversational follow-up chat
+  - name: export
+    description: PDF export
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /upload:
+    post:
+      operationId: uploadDocuments
+      tags: [upload]
+      summary: Upload medical documents
+      description: Upload one or more medical documents for processing
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/DocumentUploadInput"
+      responses:
+        "200":
+          description: Upload started successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /status/{jobId}:
+    get:
+      operationId: getJobStatus
+      tags: [analysis]
+      summary: Get processing status
+      description: Poll for job processing status
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobStatus"
+        "404":
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /analyze:
+    post:
+      operationId: startAnalysis
+      tags: [analysis]
+      summary: Start clinical analysis
+      description: Start structured extraction and clinical reasoning
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalysisInput"
+      responses:
+        "200":
+          description: Analysis started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisStartResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /report/{jobId}:
+    get:
+      operationId: getReport
+      tags: [report]
+      summary: Get completed report
+      description: Retrieve the completed clinical report for a job
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Clinical report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClinicalReport"
+        "404":
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "202":
+          description: Report still processing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobStatus"
+
+  /chat:
+    post:
+      operationId: startChatStream
+      tags: [chat]
+      summary: Start streaming chat response
+      description: Start a streaming SSE chat session for follow-up questions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatInput"
+      responses:
+        "200":
+          description: SSE stream of chat tokens
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /chat/history/{sessionId}:
+    get:
+      operationId: getChatHistory
+      tags: [chat]
+      summary: Get chat history
+      description: Retrieve chat history for a session
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Chat history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatHistoryResponse"
+
+  /export-report:
+    post:
+      operationId: exportReportPdf
+      tags: [export]
+      summary: Export report as PDF
+      description: Generate and return a PDF of the clinical report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportInput"
+      responses:
+        "200":
+          description: PDF binary
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: ["string", "null"]
+      required:
+        - error
+
+    DocumentUploadInput:
+      type: object
+      description: Multipart form upload (handled by multer; files are sent as form-data, not JSON)
+      properties:
+        language:
+          type: string
+          default: "English"
+
+    UploadResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+        fileCount:
+          type: integer
+        message:
+          type: string
+      required:
+        - jobId
+        - status
+        - fileCount
+        - message
+
+    JobStatus:
+      type: object
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, ready, completed, failed, partial]
+        stage:
+          type: string
+        progress:
+          type: integer
+          description: Progress percentage 0-100
+        message:
+          type: ["string", "null"]
+        error:
+          type: ["string", "null"]
+        result:
+          type: ["object", "null"]
+      required:
+        - jobId
+        - status
+        - progress
+
+    AnalysisInput:
+      type: object
+      properties:
+        jobId:
+          type: string
+        intakeData:
+          $ref: "#/components/schemas/IntakeFormData"
+        language:
+          type: string
+          default: "English"
+      required:
+        - jobId
+        - intakeData
+
+    AnalysisStartResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+        message:
+          type: string
+      required:
+        - jobId
+        - status
+        - message
+
+    IntakeFormData:
+      type: object
+      properties:
+        analysisType:
+          type: string
+          enum: [physical, psychiatric, both]
+        chiefComplaint:
+          type: ["string", "null"]
+        symptomDuration:
+          type: ["string", "null"]
+        age:
+          type: ["integer", "null"]
+        biologicalSex:
+          type: ["string", "null"]
+        heightCm:
+          type: ["number", "null"]
+        weightKg:
+          type: ["number", "null"]
+        knownDiagnoses:
+          type: array
+          items:
+            type: string
+        currentMedications:
+          type: ["string", "null"]
+        knownAllergies:
+          type: ["string", "null"]
+        recentSurgeries:
+          type: ["boolean", "null"]
+        recentSurgeriesDetails:
+          type: ["string", "null"]
+        familyHistory:
+          type: array
+          items:
+            type: string
+        smoking:
+          type: ["string", "null"]
+        alcohol:
+          type: ["string", "null"]
+        phq9Answers:
+          type: array
+          items:
+            type: integer
+        gad7Answers:
+          type: array
+          items:
+            type: integer
+        sleepQuality:
+          type: ["integer", "null"]
+        appetiteChanges:
+          type: ["string", "null"]
+        lifeStressors:
+          type: ["boolean", "null"]
+        lifeStressorsDetails:
+          type: ["string", "null"]
+        previousMentalHealthDiagnosis:
+          type: ["boolean", "null"]
+        mentalHealthDiagnosisDetails:
+          type: ["string", "null"]
+      required:
+        - analysisType
+
+    LabParameter:
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+        unit:
+          type: ["string", "null"]
+        referenceRange:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [normal, high, low, critical, borderline]
+        interpretation:
+          type: ["string", "null"]
+        panel:
+          type: ["string", "null"]
+      required:
+        - name
+        - value
+        - status
+
+    PrescriptionItem:
+      type: object
+      properties:
+        medicineName:
+          type: string
+        brandName:
+          type: ["string", "null"]
+        genericName:
+          type: ["string", "null"]
+        dosage:
+          type: ["string", "null"]
+        frequency:
+          type: ["string", "null"]
+        duration:
+          type: ["string", "null"]
+        timing:
+          type: ["string", "null"]
+        route:
+          type: ["string", "null"]
+        specialInstructions:
+          type: ["string", "null"]
+      required:
+        - medicineName
+
+    ClinicalFinding:
+      type: object
+      properties:
+        findingText:
+          type: string
+        confidence:
+          type: integer
+          description: 0-100 confidence percentage
+        sourceDocument:
+          type: ["string", "null"]
+        sourcePage:
+          type: ["integer", "null"]
+        sourceValue:
+          type: ["string", "null"]
+        reasoning:
+          type: ["string", "null"]
+        category:
+          type: string
+          enum: [confirmed, possible, differential, recommendation]
+      required:
+        - findingText
+        - confidence
+        - category
+
+    OrganSystemStatus:
+      type: object
+      properties:
+        system:
+          type: string
+        status:
+          type: string
+          enum: [normal, warning, critical, unknown]
+        summary:
+          type: ["string", "null"]
+      required:
+        - system
+        - status
+
+    PsychiatricSummary:
+      type: object
+      properties:
+        phq9Score:
+          type: ["integer", "null"]
+        phq9Interpretation:
+          type: ["string", "null"]
+        gad7Score:
+          type: ["integer", "null"]
+        gad7Interpretation:
+          type: ["string", "null"]
+        showMentalHealthBanner:
+          type: boolean
+        narrativeSummary:
+          type: ["string", "null"]
+      required:
+        - showMentalHealthBanner
+
+    PatientSummary:
+      type: object
+      properties:
+        name:
+          type: ["string", "null"]
+        age:
+          type: ["integer", "null"]
+        sex:
+          type: ["string", "null"]
+        dateOfAnalysis:
+          type: string
+        analysisType:
+          type: string
+      required:
+        - dateOfAnalysis
+        - analysisType
+
+    ClinicalReport:
+      type: object
+      properties:
+        jobId:
+          type: string
+        patientSummary:
+          $ref: "#/components/schemas/PatientSummary"
+        labParameters:
+          type: array
+          items:
+            $ref: "#/components/schemas/LabParameter"
+        prescriptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PrescriptionItem"
+        findings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClinicalFinding"
+        organSystems:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrganSystemStatus"
+        criticalValues:
+          type: array
+          items:
+            type: string
+        psychiatricSummary:
+          type: ["object", "null"]
+        disclaimer:
+          type: string
+        createdAt:
+          type: string
+        rawMedicalContext:
+          type: ["string", "null"]
+        hasError:
+          type: boolean
+        errorMessage:
+          type: ["string", "null"]
+      required:
+        - jobId
+        - patientSummary
+        - labParameters
+        - prescriptions
+        - findings
+        - organSystems
+        - criticalValues
+        - disclaimer
+        - createdAt
+        - hasError
+
+    ChatInput:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        jobId:
+          type: string
+        message:
+          type: string
+        language:
+          type: string
+          default: "English"
+      required:
+        - sessionId
+        - jobId
+        - message
+
+    ChatMessage:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+        timestamp:
+          type: string
+      required:
+        - role
+        - content
+        - timestamp
+
+    ChatHistoryResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatMessage"
+      required:
+        - sessionId
+        - messages
+
+    ExportInput:
+      type: object
+      properties:
+        jobId:
+          type: string
+        report:
+          $ref: "#/components/schemas/ClinicalReport"
+      required:
+        - jobId
+        - report

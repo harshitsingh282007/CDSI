@@ -1,0 +1,26 @@
+{
+  "routes": [
+    {"route": "/intake", "rewrite": "/index.html"},
+    {"route": "/processing", "rewrite": "/index.html"},
+    {"route": "/report", "rewrite": "/index.html"},
+    {"route": "/settings", "rewrite": "/index.html"}
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/assets/*",
+      "/*.css",
+      "/*.js",
+      "/*.png",
+      "/*.jpg",
+      "/*.jpeg",
+      "/*.gif",
+      "/*.svg",
+      "/*.ico",
+      "/*.woff",
+      "/*.woff2",
+      "/*.ttf",
+      "/*.eot"
+    ]
+  }
+}
