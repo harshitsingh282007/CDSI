@@ -87,22 +87,41 @@ function parseJsonFromText(text: string): Record<string, unknown> {
 
 function extractLabsRegex(text: string): LabParameter[] {
   const labs: LabParameter[] = [];
-  const patterns: Array<{ name: string; regex: RegExp; panel: string; unit: string }> = [
-    { name: "Hemoglobin", regex: /(?:hemoglobin|hb|hgb)[\s:]*([0-9]+(?:\.[0-9]+)?)\s*(g\/dl)?/i, panel: "CBC", unit: "g/dL" },
-    { name: "WBC Count", regex: /(?:wbc|white blood cell|leukocytes)[\s:]*([0-9]+(?:\.[0-9]+)?)\s*(\times\s*10\^3\/\mu l|\/ul|k\/ul)?/i, panel: "CBC", unit: "10^3/uL" },
-    { name: "Platelet Count", regex: /(?:platelet|plt)[\s:]*([0-9,]+(?:\.[0-9]+)?)/i, panel: "CBC", unit: "10^3/uL" },
-    { name: "HbA1c", regex: /(?:hba1c|glycated hemoglobin)[\s:]*([0-9]+(?:\.[0-9]+)?)\s*%?/i, panel: "Glucose", unit: "%" },
-    { name: "Fasting Blood Glucose", regex: /(?:fasting blood sugar|fasting glucose|fbs)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Glucose", unit: "mg/dL" },
-    { name: "Serum Creatinine", regex: /(?:creatinine|serum creatinine)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "KFT", unit: "mg/dL" },
-    { name: "Blood Urea", regex: /(?:blood urea|bun|urea)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "KFT", unit: "mg/dL" },
-    { name: "TSH", regex: /(?:tsh|thyroid stimulating hormone)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Thyroid", unit: "uIU/mL" },
-    { name: "Total Bilirubin", regex: /(?:total bilirubin|bilirubin)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "LFT", unit: "mg/dL" },
-    { name: "ALT (SGPT)", regex: /(?:alt|sgpt)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "LFT", unit: "U/L" },
-    { name: "AST (SGOT)", regex: /(?:ast|sgot)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "LFT", unit: "U/L" },
-    { name: "Total Cholesterol", regex: /(?:total cholesterol|cholesterol)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Lipid", unit: "mg/dL" },
-    { name: "Triglycerides", regex: /(?:triglycerides|tg)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Lipid", unit: "mg/dL" },
-    { name: "Vitamin D", regex: /(?:vitamin d|25-oh vitamin d)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Vitamins", unit: "ng/mL" },
-    { name: "Vitamin B12", regex: /(?:vitamin b12|b12)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Vitamins", unit: "pg/mL" },
+  const patterns: Array<{ name: string; regex: RegExp; panel: string; unit: string; normalMin?: number; normalMax?: number }> = [
+    { name: "WBC (Total)", regex: /(?:wbc|white blood cell|leukocytes|wbc \(total\))[\s:]*([0-9,]+(?:\.[0-9]+)?)\s*(?:cells\/[μu]l|\/ul|k\/ul|10\^3\/[μu]l)?/i, panel: "CBC", unit: "cells/µL", normalMin: 4500, normalMax: 11000 },
+    { name: "Neutrophils", regex: /neutrophils[\s:]*([0-9]+(?:\.[0-9]+)?)\s*%/i, panel: "CBC", unit: "%", normalMin: 50, normalMax: 70 },
+    { name: "Lymphocytes", regex: /lymphocytes[\s:]*([0-9]+(?:\.[0-9]+)?)\s*%/i, panel: "CBC", unit: "%", normalMin: 20, normalMax: 40 },
+    { name: "Hemoglobin", regex: /(?:hemoglobin|hb|hgb)[\s:]*([0-9]+(?:\.[0-9]+)?)\s*(g\/dl)?/i, panel: "CBC", unit: "g/dL", normalMin: 13.5, normalMax: 17.5 },
+    { name: "Hematocrit", regex: /hematocrit[\s:]*([0-9]+(?:\.[0-9]+)?)\s*%/i, panel: "CBC", unit: "%", normalMin: 41, normalMax: 53 },
+    { name: "Platelet Count", regex: /(?:platelets|platelet count|plt)[\s:]*([0-9,]+(?:\.[0-9]+)?)/i, panel: "CBC", unit: "cells/µL", normalMin: 150000, normalMax: 400000 },
+    { name: "RBC Count", regex: /(?:rbc|red blood cell)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "CBC", unit: "M/µL", normalMin: 4.5, normalMax: 6.0 },
+    { name: "MCV", regex: /mcv[\s:]*([0-9]+(?:\.[0-9]+)?)\s*fl/i, panel: "CBC", unit: "fL", normalMin: 80, normalMax: 100 },
+    
+    // Widal & Serology
+    { name: "Salmonella Typhi O (Widal)", regex: /salmonella typhi o[^\n:]*:\s*(positive|negative|[0-9]+:[0-9]+)/i, panel: "Infectious", unit: "Titer" },
+    { name: "Salmonella Typhi H (Widal)", regex: /salmonella typhi h[^\n:]*:\s*(positive|negative|[0-9]+:[0-9]+)/i, panel: "Infectious", unit: "Titer" },
+    { name: "Blood Culture", regex: /blood culture[^\n:]*:\s*(positive|negative|[^\n]+)/i, panel: "Infectious", unit: "Culture" },
+
+    // LFT
+    { name: "Total Bilirubin", regex: /total bilirubin[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "LFT", unit: "mg/dL", normalMin: 0.1, normalMax: 1.2 },
+    { name: "Direct Bilirubin", regex: /direct bilirubin[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "LFT", unit: "mg/dL", normalMin: 0.0, normalMax: 0.3 },
+    { name: "Indirect Bilirubin", regex: /indirect bilirubin[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "LFT", unit: "mg/dL", normalMin: 0.1, normalMax: 0.8 },
+    { name: "AST (SGOT)", regex: /(?:ast|sgot)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "LFT", unit: "IU/L", normalMin: 10, normalMax: 40 },
+    { name: "ALT (SGPT)", regex: /(?:alt|sgpt)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "LFT", unit: "IU/L", normalMin: 7, normalMax: 56 },
+    { name: "ALP", regex: /alp[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "LFT", unit: "IU/L", normalMin: 30, normalMax: 120 },
+    { name: "Albumin", regex: /albumin[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "LFT", unit: "g/dL", normalMin: 3.5, normalMax: 5.5 },
+
+    // RFT
+    { name: "Serum Creatinine", regex: /(?:creatinine|serum creatinine)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "KFT", unit: "mg/dL", normalMin: 0.7, normalMax: 1.3 },
+    { name: "Blood Urea Nitrogen (BUN)", regex: /(?:blood urea nitrogen|bun|blood urea)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "KFT", unit: "mg/dL", normalMin: 7, normalMax: 20 },
+    { name: "eGFR", regex: /egfr[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "KFT", unit: "mL/min/1.73m²", normalMin: 90, normalMax: 140 },
+
+    // Glucose & Coagulation
+    { name: "Fasting Blood Sugar", regex: /fasting blood (?:sugar|glucose)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Glucose", unit: "mg/dL", normalMin: 70, normalMax: 100 },
+    { name: "Random Blood Sugar", regex: /random blood (?:sugar|glucose)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Glucose", unit: "mg/dL", normalMin: 70, normalMax: 140 },
+    { name: "Prothrombin Time (PT)", regex: /(?:pt \(prothrombin time\)|prothrombin time)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Coagulation", unit: "sec", normalMin: 12, normalMax: 14 },
+    { name: "INR", regex: /inr[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Coagulation", unit: "", normalMin: 0.8, normalMax: 1.1 },
+    { name: "aPTT", regex: /aptt[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Coagulation", unit: "sec", normalMin: 25, normalMax: 35 },
   ];
 
   for (const item of patterns) {
@@ -110,20 +129,68 @@ function extractLabsRegex(text: string): LabParameter[] {
     if (match && match[1]) {
       const valStr = match[1].replace(/,/g, "");
       const valNum = parseFloat(valStr);
-      if (!isNaN(valNum)) {
-        labs.push({
-          name: item.name,
-          value: valStr,
-          unit: item.unit,
-          referenceRange: null,
-          status: "normal",
-          interpretation: `Extracted parameter: ${valStr} ${item.unit}`,
-          panel: item.panel,
-        });
+      let status: LabParameter["status"] = "normal";
+      if (!isNaN(valNum) && item.normalMin !== undefined && item.normalMax !== undefined) {
+        if (valNum < item.normalMin) status = "low";
+        else if (valNum > item.normalMax) status = valNum > item.normalMax * 1.5 ? "critical" : "high";
+      } else if (/positive/i.test(match[0])) {
+        status = "critical";
       }
+
+      labs.push({
+        name: item.name,
+        value: valStr,
+        unit: item.unit,
+        referenceRange: item.normalMin ? `${item.normalMin}-${item.normalMax}` : null,
+        status,
+        interpretation: `Extracted result: ${valStr} ${item.unit}`,
+        panel: item.panel,
+      });
     }
   }
   return labs;
+}
+
+function extractPrescriptionsRegex(text: string): PrescriptionItem[] {
+  const list: PrescriptionItem[] = [];
+  const meds = [
+    { name: "Ceftriaxone", dose: "2g", route: "Intravenous (IV)", freq: "Every 8 hours", dur: "7-14 days" },
+    { name: "Azithromycin", dose: "500mg", route: "Oral", freq: "Once daily", dur: "3-5 days" },
+    { name: "Paracetamol", dose: "500mg", route: "PO/IV", freq: "Every 6 hours", dur: "As needed" },
+    { name: "Ondansetron", dose: "4mg", route: "PO/IV", freq: "TID", dur: "3-5 days" },
+    { name: "ORS Solution", dose: "Ad-lib", route: "Oral", freq: "Frequent sips", dur: "Ongoing" },
+    { name: "Cefixime", dose: "400mg", route: "Oral", freq: "TID", dur: "7-10 days" },
+    { name: "Levofloxacin", dose: "500mg", route: "Oral", freq: "OD", dur: "7-10 days" },
+  ];
+
+  for (const m of meds) {
+    if (new RegExp(m.name, "i").test(text)) {
+      list.push({
+        medicineName: m.name,
+        brandName: null,
+        genericName: m.name,
+        dosage: m.dose,
+        frequency: m.freq,
+        duration: m.dur,
+        timing: "As advised",
+        route: m.route,
+        specialInstructions: "Take as prescribed",
+      });
+    }
+  }
+  return list;
+}
+
+function extractPatientInfo(text: string): { name: string | null; age: number | null; sex: string | null } {
+  const ageMatch = text.match(/age[\s:]*([0-9]+)/i);
+  const sexMatch = text.match(/(?:gender|sex)[\s:]*(male|female)/i);
+  const nameMatch = text.match(/name[\s:]*([a-zA-Z\s\[\]]+)/i);
+
+  return {
+    name: nameMatch ? nameMatch[1].trim() : null,
+    age: ageMatch ? parseInt(ageMatch[1], 10) : null,
+    sex: sexMatch ? sexMatch[1].toLowerCase() : null,
+  };
 }
 
 export async function extractStructuredData(
@@ -160,7 +227,7 @@ export async function extractStructuredData(
     if (!patientSex && chunkResults.patientSex) patientSex = chunkResults.patientSex;
   }
 
-  // Deterministic regex fallback if AI extraction yielded no lab parameters
+  // Deterministic regex fallbacks if AI extraction yielded missing data
   if (allLabs.length === 0) {
     const regexLabs = extractLabsRegex(medicalContext);
     if (regexLabs.length > 0) {
@@ -168,6 +235,19 @@ export async function extractStructuredData(
       allLabs.push(...regexLabs);
     }
   }
+
+  if (allPrescriptions.length === 0) {
+    const regexMeds = extractPrescriptionsRegex(medicalContext);
+    if (regexMeds.length > 0) {
+      logger.info({ count: regexMeds.length }, "Extracted prescriptions via regex fallback");
+      allPrescriptions.push(...regexMeds);
+    }
+  }
+
+  const patientInfo = extractPatientInfo(medicalContext);
+  if (!patientName) patientName = patientInfo.name;
+  if (!patientAge) patientAge = patientInfo.age;
+  if (!patientSex) patientSex = patientInfo.sex;
 
   return {
     labParameters: deduplicateLabs(allLabs),

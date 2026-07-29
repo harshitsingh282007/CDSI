@@ -176,7 +176,6 @@ async function callProvider(
               ]),
               temperature: jsonMode ? 0.1 : 0.3,
               max_tokens: 4096,
-              ...(jsonMode ? { response_format: { type: "json_object" } } : {}),
             }),
           }),
           TIMEOUT_MS
@@ -236,15 +235,24 @@ export async function* streamAI(
           max_tokens: 2048,
         }),
       }),
-      TIMEOUT_MS
+      15_000
     );
-    if (!res.ok || !res.body) {
-      yield `Error: AI service returned ${res.status}`;
+
+    if (res.ok && res.body) {
+      yield* parseSSETokens(res.body);
       return;
     }
-    yield* parseSSETokens(res.body);
-  } catch (e: unknown) {
-    yield `Error: ${errorMessage(e)}`;
+  } catch {
+    /* Fallback to non-streaming call below */
+  }
+
+  // Non-streaming fallback if SSE fails or times out
+  const lastUserMsg = messages[messages.length - 1]?.content ?? "";
+  const result = await callProvider(lastUserMsg, systemPrompt, language, false);
+  if (result.content) {
+    yield result.content;
+  } else {
+    yield `Error: ${result.error || "AI call timed out"}`;
   }
 }
 
