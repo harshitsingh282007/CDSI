@@ -79,46 +79,25 @@ app.use(
   }),
 );
 
-// CORS configuration
-const allowedOrigins = [
-  "https://www.cdsi.in",
-  "https://cdsi.in",
-  "https://victorious-rock-052758600.7.azurestaticapps.net",
-  "http://localhost:5173",
-];
-
-if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(process.env.FRONTEND_URL.replace(/\/+$/, ""));
-}
-
+// CORS configuration — Permissive for all origins (Custom GoDaddy domains, Vercel, Localhost, Mobile)
 app.use(
   cors({
     origin(origin, callback) {
-      // Allow requests without an Origin header (Postman, curl, server-to-server)
-      if (!origin) {
-        return callback(null, true);
-      }
-
-      if (
-        allowedOrigins.includes(origin) ||
-        origin.endsWith(".onrender.com") ||
-        origin.endsWith(".vercel.app") ||
-        origin.endsWith(".netlify.app")
-      ) {
-        return callback(null, true);
-      }
-
-      return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+      callback(null, true);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Correlation-ID", "X-Request-ID"],
   })
 );
 
 // Body parsing with size limits
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Root Health Check endpoints for Render/monitoring
+app.get("/health", (_req, res) => res.json({ status: "ok", timestamp: new Date().toISOString() }));
+app.get("/healthz", (_req, res) => res.json({ status: "ok" }));
 
 // Routes
 app.use("/api", router);
