@@ -74,6 +74,58 @@ Rules:
 - If no prescriptions found, return empty array
 - Never fabricate values not present in the text`;
 
+function parseJsonFromText(text: string): Record<string, unknown> {
+  let cleaned = text.trim();
+  cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+  }
+  return JSON.parse(cleaned);
+}
+
+function extractLabsRegex(text: string): LabParameter[] {
+  const labs: LabParameter[] = [];
+  const patterns: Array<{ name: string; regex: RegExp; panel: string; unit: string }> = [
+    { name: "Hemoglobin", regex: /(?:hemoglobin|hb|hgb)[\s:]*([0-9]+(?:\.[0-9]+)?)\s*(g\/dl)?/i, panel: "CBC", unit: "g/dL" },
+    { name: "WBC Count", regex: /(?:wbc|white blood cell|leukocytes)[\s:]*([0-9]+(?:\.[0-9]+)?)\s*(\times\s*10\^3\/\mu l|\/ul|k\/ul)?/i, panel: "CBC", unit: "10^3/uL" },
+    { name: "Platelet Count", regex: /(?:platelet|plt)[\s:]*([0-9,]+(?:\.[0-9]+)?)/i, panel: "CBC", unit: "10^3/uL" },
+    { name: "HbA1c", regex: /(?:hba1c|glycated hemoglobin)[\s:]*([0-9]+(?:\.[0-9]+)?)\s*%?/i, panel: "Glucose", unit: "%" },
+    { name: "Fasting Blood Glucose", regex: /(?:fasting blood sugar|fasting glucose|fbs)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Glucose", unit: "mg/dL" },
+    { name: "Serum Creatinine", regex: /(?:creatinine|serum creatinine)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "KFT", unit: "mg/dL" },
+    { name: "Blood Urea", regex: /(?:blood urea|bun|urea)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "KFT", unit: "mg/dL" },
+    { name: "TSH", regex: /(?:tsh|thyroid stimulating hormone)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Thyroid", unit: "uIU/mL" },
+    { name: "Total Bilirubin", regex: /(?:total bilirubin|bilirubin)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "LFT", unit: "mg/dL" },
+    { name: "ALT (SGPT)", regex: /(?:alt|sgpt)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "LFT", unit: "U/L" },
+    { name: "AST (SGOT)", regex: /(?:ast|sgot)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "LFT", unit: "U/L" },
+    { name: "Total Cholesterol", regex: /(?:total cholesterol|cholesterol)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Lipid", unit: "mg/dL" },
+    { name: "Triglycerides", regex: /(?:triglycerides|tg)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Lipid", unit: "mg/dL" },
+    { name: "Vitamin D", regex: /(?:vitamin d|25-oh vitamin d)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Vitamins", unit: "ng/mL" },
+    { name: "Vitamin B12", regex: /(?:vitamin b12|b12)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Vitamins", unit: "pg/mL" },
+  ];
+
+  for (const item of patterns) {
+    const match = text.match(item.regex);
+    if (match && match[1]) {
+      const valStr = match[1].replace(/,/g, "");
+      const valNum = parseFloat(valStr);
+      if (!isNaN(valNum)) {
+        labs.push({
+          name: item.name,
+          value: valStr,
+          unit: item.unit,
+          referenceRange: null,
+          status: "normal",
+          interpretation: `Extracted parameter: ${valStr} ${item.unit}`,
+          panel: item.panel,
+        });
+      }
+    }
+  }
+  return labs;
+}
+
 export async function extractStructuredData(
   medicalContext: string,
   language = "English"
@@ -84,7 +136,6 @@ export async function extractStructuredData(
     return { labParameters: [], prescriptions: [], patientName: null, patientAge: null, patientSex: null, extractionErrors: ["No medical context provided"] };
   }
 
-  // Split into chunks if too long (Gemini has massive token limits, but good for safety)
   const MAX_CHARS = 12000;
   const chunks: string[] = [];
   if (medicalContext.length > MAX_CHARS) {
@@ -107,6 +158,15 @@ export async function extractStructuredData(
     if (!patientName && chunkResults.patientName) patientName = chunkResults.patientName;
     if (!patientAge && chunkResults.patientAge) patientAge = chunkResults.patientAge;
     if (!patientSex && chunkResults.patientSex) patientSex = chunkResults.patientSex;
+  }
+
+  // Deterministic regex fallback if AI extraction yielded no lab parameters
+  if (allLabs.length === 0) {
+    const regexLabs = extractLabsRegex(medicalContext);
+    if (regexLabs.length > 0) {
+      logger.info({ count: regexLabs.length }, "Extracted labs via regex fallback");
+      allLabs.push(...regexLabs);
+    }
   }
 
   return {
@@ -147,7 +207,7 @@ async function extractChunksParallel(
           return { labs: [], prescriptions: [], patientName: null, patientAge: null, patientSex: null };
         }
         try {
-          const parsed = JSON.parse(response.content) as {
+          const parsed = parseJsonFromText(response.content) as {
             labParameters?: LabParameter[];
             prescriptions?: PrescriptionItem[];
             patientName?: string | null;

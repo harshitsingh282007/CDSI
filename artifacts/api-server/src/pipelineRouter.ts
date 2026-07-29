@@ -26,11 +26,12 @@ function getAIConfig() {
 
 function getCompletionsUrl(baseUrl: string): string {
   let url = baseUrl.trim().replace(/\/+$/, "");
-  // Ensure Google Gemini base URL includes /openai endpoint format
+  // Strip existing /chat/completions suffix to prevent double path duplication
+  url = url.replace(/\/chat\/completions\/?$/i, "");
+
   if (url.includes("generativelanguage.googleapis.com") && !url.includes("/openai")) {
     url = `${url}/openai`;
   }
-  if (url.endsWith("/chat/completions")) return url;
   return `${url}/chat/completions`;
 }
 
