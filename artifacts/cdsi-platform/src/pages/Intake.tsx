@@ -5,6 +5,16 @@ import { useCDSI } from '../context/CDSIContext';
 import { useStartAnalysis, type IntakeFormData, type IntakeFormDataAnalysisType } from '@workspace/api-client-react';
 import { PHQ9_QUESTIONS, GAD7_QUESTIONS } from '../translations';
 
+export function getBmiCategory(bmiVal: number): { label: string; category: string; badgeBg: string } {
+  if (bmiVal < 16.0) return { label: "Very Low", category: "Severe Underweight", badgeBg: "bg-red-100 border-red-300 text-red-800" };
+  if (bmiVal < 18.5) return { label: "Low", category: "Underweight", badgeBg: "bg-amber-100 border-amber-300 text-amber-800" };
+  if (bmiVal < 25.0) return { label: "Normal (Healthy)", category: "Normal Weight", badgeBg: "bg-emerald-100 border-emerald-300 text-emerald-800" };
+  if (bmiVal < 30.0) return { label: "Moderate High", category: "Overweight", badgeBg: "bg-orange-100 border-orange-300 text-orange-800" };
+  if (bmiVal < 35.0) return { label: "High", category: "Obesity Class I", badgeBg: "bg-red-100 border-red-300 text-red-700" };
+  if (bmiVal < 40.0) return { label: "Very High", category: "Obesity Class II", badgeBg: "bg-red-200 border-red-400 text-red-900" };
+  return { label: "Extremely High", category: "Severe Obesity Class III", badgeBg: "bg-red-300 border-red-500 text-red-950" };
+}
+
 export default function Intake() {
   const { jobId, language } = useCDSI();
   const [, setLocation] = useLocation();
@@ -14,6 +24,7 @@ export default function Intake() {
   const [analysisType, setAnalysisType] = useState<IntakeFormDataAnalysisType | null>(null);
   
   // Physical State
+  const [patientName, setPatientName] = useState('');
   const [chiefComplaint, setChiefComplaint] = useState('');
   const [symptomDuration, setSymptomDuration] = useState('days');
   const [age, setAge] = useState('');
@@ -79,8 +90,9 @@ export default function Intake() {
   const onSubmit = () => {
     if (!analysisType || !jobId) return;
 
-    const intakeData: IntakeFormData = {
+    const intakeData: IntakeFormData & { patientName?: string | null } = {
       analysisType,
+      patientName: patientName || null,
       chiefComplaint: chiefComplaint || null,
       symptomDuration: symptomDuration || null,
       age: age ? parseInt(age, 10) : null,
@@ -187,6 +199,17 @@ export default function Intake() {
 
               <div className="grid grid-cols-1 gap-6">
                 <div>
+                  <label className="block text-sm font-medium text-[#111827] mb-2">Patient Full Name (Optional)</label>
+                  <input 
+                    type="text"
+                    value={patientName}
+                    onChange={(e) => setPatientName(e.target.value)}
+                    placeholder="Enter patient full name..."
+                    className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#16A34A] focus:border-[#16A34A]"
+                  />
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-[#111827] mb-2">Chief Complaint</label>
                   <textarea 
                     value={chiefComplaint}
@@ -255,8 +278,14 @@ export default function Intake() {
                     </div>
                   </div>
                   {bmi && (
-                    <div className="col-span-full text-sm text-[#6B7280]">
-                      Calculated BMI: <span className="font-medium text-[#111827]">{bmi}</span>
+                    <div className="col-span-full mt-2 p-4 rounded-xl border bg-slate-50 flex items-center justify-between shadow-sm">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Body Mass Index (BMI)</span>
+                        <span className="text-xl font-bold text-slate-900 mt-0.5">{bmi} kg/m²</span>
+                      </div>
+                      <span className={`px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide border shadow-sm ${getBmiCategory(parseFloat(bmi)).badgeBg}`}>
+                        {getBmiCategory(parseFloat(bmi)).label} • {getBmiCategory(parseFloat(bmi)).category}
+                      </span>
                     </div>
                   )}
                 </div>

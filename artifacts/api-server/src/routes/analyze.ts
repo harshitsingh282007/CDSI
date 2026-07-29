@@ -78,7 +78,9 @@ router.post("/analyze", async (req: Request, res: Response) => {
           bmi = parseFloat((weight / Math.pow(height / 100, 2)).toFixed(1));
         }
 
-        let cleanName = patientName ? patientName.replace(/\s+(weight|height|age|sex|patient|id)$/i, "").trim() : null;
+        const intakeName = intakeData.patientName as string | null | undefined;
+        let rawName = (intakeName && intakeName.trim().length > 1) ? intakeName : patientName;
+        let cleanName = rawName ? rawName.replace(/\s+(weight|height|age|sex|patient|id)$/i, "").trim() : null;
         if (!cleanName || cleanName.length < 2) cleanName = "Patient";
 
         const patientSummary = {

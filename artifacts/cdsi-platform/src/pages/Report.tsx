@@ -13,6 +13,7 @@ import {
 import { useCDSI } from '../context/CDSIContext';
 import { t } from '../translations';
 import { useGetChatHistory, getGetChatHistoryQueryKey } from '@workspace/api-client-react';
+import { getBmiCategory } from './Intake';
 
 // ── Type extensions ────────────────────────────────────────────────────────
 interface FindingDetails {
@@ -526,8 +527,8 @@ export default function Report() {
             {report.patientSummary.bmi && (
               <>
                 <span>·</span>
-                <span className="font-semibold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-md border border-emerald-200 shadow-sm">
-                  BMI: {report.patientSummary.bmi} kg/m²
+                <span className={`font-semibold px-2.5 py-0.5 rounded-md border shadow-sm ${getBmiCategory(report.patientSummary.bmi).badgeBg}`}>
+                  BMI: {report.patientSummary.bmi} kg/m² • {getBmiCategory(report.patientSummary.bmi).label} ({getBmiCategory(report.patientSummary.bmi).category})
                 </span>
               </>
             )}
