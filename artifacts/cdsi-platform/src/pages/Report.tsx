@@ -548,12 +548,12 @@ export default function Report() {
       )}
 
       {/* ── Patient Header ── */}
-      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pb-5 border-b border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pb-5 border-b border-gray-200">
         <div>
-          <h1 className="text-3xl font-extrabold font-display tracking-tight text-white">
+          <h1 className="text-3xl font-bold text-gray-900">
             {(report.patientSummary?.name || 'Anonymous Patient').replace(/\s+(weight|height|age|sex|patient|id)$/i, '').trim()}
           </h1>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2 text-slate-400 text-sm font-medium">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2 text-gray-600 text-sm font-medium">
             {report.patientSummary?.age && <span>{report.patientSummary.age} years</span>}
             {report.patientSummary?.sex && <><span>·</span><span className="capitalize">{report.patientSummary.sex}</span></>}
             <span>·</span>
@@ -566,39 +566,39 @@ export default function Report() {
                 </span>
               </>
             )}
-            <span className="ml-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold uppercase tracking-wide bg-slate-900 text-teal-300 border border-teal-500/30">
+            <span className="ml-1 px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-gray-100 text-gray-700 border border-gray-200">
               {report.patientSummary?.analysisType || 'N/A'}
             </span>
           </div>
-          <p className="text-xs italic text-slate-500 mt-2">AI-generated decision support only. Always verify with a licensed physician.</p>
+          <p className="text-xs italic text-gray-400 mt-2">AI-generated decision support only. Always verify with a licensed physician.</p>
         </div>
         <button onClick={downloadPdf}
-          className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 border border-slate-700 text-slate-200 font-semibold text-xs rounded-xl hover:bg-slate-800 transition-colors shadow-lg shadow-black/20 whitespace-nowrap flex-shrink-0">
-          <Download className="w-4 h-4 text-teal-400" />{t('downloadPdf', language)}
+          className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm whitespace-nowrap flex-shrink-0">
+          <Download className="w-4 h-4" />{t('downloadPdf', language)}
         </button>
       </div>
 
       {/* ── Overview Stat Cards ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="cyber-card rounded-xl p-4 flex flex-col gap-1 shadow-sm">
-          <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">{t('totalLabs', language)}</p>
-          <p className="text-3xl font-extrabold font-display text-white">{report.labParameters.length}</p>
-          <p className="text-xs text-slate-400">{normalCount} {t('normalLabel', language).toLowerCase()}</p>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-1 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t('totalLabs', language)}</p>
+          <p className="text-3xl font-bold text-gray-900">{report.labParameters.length}</p>
+          <p className="text-xs text-gray-500">{normalCount} {t('normalLabel', language).toLowerCase()}</p>
         </div>
-        <div className={`rounded-xl p-4 flex flex-col gap-1 shadow-sm border ${abnormalCount > 0 ? 'bg-amber-500/10 border-amber-500/30 text-amber-300' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'}`}>
-          <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">{t('abnormal', language)}</p>
-          <p className={`text-3xl font-extrabold font-display ${abnormalCount > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>{abnormalCount}</p>
-          <p className="text-xs text-slate-400">of {report.labParameters.length} tests</p>
+        <div className={`rounded-xl p-4 flex flex-col gap-1 shadow-sm border ${abnormalCount > 0 ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'}`}>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t('abnormal', language)}</p>
+          <p className={`text-3xl font-bold ${abnormalCount > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>{abnormalCount}</p>
+          <p className="text-xs text-gray-500">of {report.labParameters.length} tests</p>
         </div>
-        <div className={`rounded-xl p-4 flex flex-col gap-1 shadow-sm border ${criticalCount > 0 ? 'bg-red-500/15 border-red-500/40 text-red-300' : 'cyber-card'}`}>
-          <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">{t('critical', language)}</p>
-          <p className={`text-3xl font-extrabold font-display ${criticalCount > 0 ? 'text-red-400' : 'text-slate-500'}`}>{criticalCount}</p>
-          <p className="text-xs text-slate-400">values flagged</p>
+        <div className={`rounded-xl p-4 flex flex-col gap-1 shadow-sm border ${criticalCount > 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t('critical', language)}</p>
+          <p className={`text-3xl font-bold ${criticalCount > 0 ? 'text-red-700' : 'text-gray-400'}`}>{criticalCount}</p>
+          <p className="text-xs text-gray-500">values flagged</p>
         </div>
-        <div className="cyber-card rounded-xl p-4 flex flex-col gap-1 shadow-sm">
-          <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">{t('totalFindings', language)}</p>
-          <p className="text-3xl font-extrabold font-display text-white">{report.findings.length}</p>
-          <p className="text-xs text-slate-400">{confirmedFindings.length} confirmed</p>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-1 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t('totalFindings', language)}</p>
+          <p className="text-3xl font-bold text-gray-900">{report.findings.length}</p>
+          <p className="text-xs text-gray-500">{confirmedFindings.length} confirmed</p>
         </div>
       </div>
 

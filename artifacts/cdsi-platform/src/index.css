@@ -1,125 +1,35 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Caveat:wght@500;600;700&display=swap');
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
-  --font-sans: "Plus Jakarta Sans", "Inter", sans-serif;
-  --font-display: "Space Grotesk", sans-serif;
-  --color-primary: #0D9488;
+  --font-sans: "Inter", sans-serif;
+  --font-handwritten: "Caveat", cursive;
+  --color-primary: #11998E;
   --color-primary-foreground: #FFFFFF;
-  --color-primary-border: #0F766E;
+  --color-primary-border: #0F8A7F;
 }
 
 body {
-  background-color: #090D16;
-  color: #F3F4F6;
-  font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+  background-color: #FAFAFA;
+  color: #111827;
+  font-family: "Inter", sans-serif;
   -webkit-font-smoothing: antialiased;
-  background-image: 
-    radial-gradient(circle at 15% 15%, rgba(13, 148, 136, 0.08) 0%, transparent 45%),
-    radial-gradient(circle at 85% 85%, rgba(14, 165, 233, 0.06) 0%, transparent 45%);
-  background-attachment: fixed;
 }
 
-/* Custom Scrollbar */
+/* Hide scrollbar for cleaner UI but keep functionality */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0B101D;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1E293B;
-  border-radius: 4px;
+  background: #E5E7EB;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #0D9488;
-}
-
-/* HackMIT Cyber Card Glassmorphism */
-.cyber-card {
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.cyber-card:hover {
-  border-color: rgba(13, 148, 136, 0.4);
-  box-shadow: 0 14px 40px -10px rgba(13, 148, 136, 0.15);
-}
-
-.cyber-card-glow {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(13, 148, 136, 0.3);
-  box-shadow: 0 0 25px rgba(13, 148, 136, 0.12);
-}
-
-/* Cyber Grid Background Pattern */
-.cyber-grid {
-  background-size: 32px 32px;
-  background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-}
-
-/* Pulsing Neon Animations */
-@keyframes neonPulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.96); }
-}
-
-.animate-neon-pulse {
-  animation: neonPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Laser Scanline Animation for Upload Dropzone */
-@keyframes scanline {
-  0% { top: 0%; opacity: 0.8; }
-  50% { opacity: 1; }
-  100% { top: 100%; opacity: 0.2; }
-}
-
-.animate-scanline {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #0D9488, #38BDF8, #0D9488, transparent);
-  box-shadow: 0 0 15px #0D9488, 0 0 8px #38BDF8;
-  animation: scanline 2.5s ease-in-out infinite;
-}
-
-/* Shimmer Highlight for Action Buttons */
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-.animate-shimmer {
-  position: relative;
-  overflow: hidden;
-}
-
-.animate-shimmer::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  transform: translateX(-100%);
-  background-image: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0,
-    rgba(255, 255, 255, 0.15) 20%,
-    rgba(255, 255, 255, 0.3) 60%,
-    rgba(255, 255, 255, 0)
-  );
-  animation: shimmer 3s infinite;
+  background: #D1D5DB;
 }
