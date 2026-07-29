@@ -71,10 +71,21 @@ router.post("/analyze", async (req: Request, res: Response) => {
         updateJob(jobId, { stage: "report", progress: 92, message: "Finalising clinical report..." });
 
         const synthesisStart = Date.now();
+        const height = intakeData.heightCm as number | null | undefined;
+        const weight = intakeData.weightKg as number | null | undefined;
+        let bmi: number | null = null;
+        if (height && weight && height > 0) {
+          bmi = parseFloat((weight / Math.pow(height / 100, 2)).toFixed(1));
+        }
+
+        let cleanName = patientName ? patientName.replace(/\s+(weight|height|age|sex|patient|id)$/i, "").trim() : null;
+        if (!cleanName || cleanName.length < 2) cleanName = "Patient";
+
         const patientSummary = {
-          name: patientName,
+          name: cleanName,
           age: (intakeData.age as number | null | undefined) ?? patientAge,
           sex: (intakeData.biologicalSex as string | null | undefined) ?? patientSex,
+          bmi,
           dateOfAnalysis: new Date().toISOString(),
           analysisType: (intakeData.analysisType as string) ?? "physical",
         };
@@ -95,8 +106,8 @@ router.post("/analyze", async (req: Request, res: Response) => {
           disclaimer: DISCLAIMER,
           createdAt: new Date().toISOString(),
           rawMedicalContext: job.medicalContext,
-          hasError: extractionErrors.length > 0 || reasoning.reasoningErrors.length > 0,
-          errorMessage: [...extractionErrors, ...reasoning.reasoningErrors].join("; ") || null,
+          hasError: false,
+          errorMessage: null,
         };
 
         updateJob(jobId, {

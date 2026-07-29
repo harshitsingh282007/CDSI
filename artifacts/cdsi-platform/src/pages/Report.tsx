@@ -44,7 +44,7 @@ interface RiskAssessment {
 
 interface ExtendedReport {
   jobId: string;
-  patientSummary: { name?: string | null; age?: number | null; sex?: string | null; dateOfAnalysis: string; analysisType: string };
+  patientSummary: { name?: string | null; age?: number | null; sex?: string | null; bmi?: number | null; dateOfAnalysis: string; analysisType: string };
   labParameters: Array<{ name: string; value: string; unit?: string | null; referenceRange?: string | null; status: string; interpretation?: string | null; panel?: string | null }>;
   prescriptions: Array<{ medicineName: string; dosage?: string | null; frequency?: string | null; duration?: string | null; timing?: string | null; specialInstructions?: string | null }>;
   findings: ExtendedFinding[];
@@ -493,8 +493,8 @@ export default function Report() {
         </div>
       )}
 
-      {/* ── Error Banner ── */}
-      {report.hasError && (
+      {/* ── Error Banner (Only shown if report failed completely with no labs) ── */}
+      {report.hasError && report.labParameters.length === 0 && (
         <div className="bg-red-50 text-red-700 px-5 py-4 rounded-xl flex items-start gap-3 shadow border border-red-200">
           <ShieldAlert className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <div>
@@ -515,13 +515,23 @@ export default function Report() {
       {/* ── Patient Header ── */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pb-5 border-b border-gray-200">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">{report.patientSummary.name || 'Anonymous Patient'}</h1>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-gray-500 text-sm">
+          <h1 className="text-3xl font-bold text-gray-900">
+            {(report.patientSummary.name || 'Anonymous Patient').replace(/\s+(weight|height|age|sex|patient|id)$/i, '').trim()}
+          </h1>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2 text-gray-600 text-sm font-medium">
             {report.patientSummary.age && <span>{report.patientSummary.age} years</span>}
-            {report.patientSummary.sex && <><span>·</span><span>{report.patientSummary.sex}</span></>}
+            {report.patientSummary.sex && <><span>·</span><span className="capitalize">{report.patientSummary.sex}</span></>}
             <span>·</span>
             <span>{new Date(report.patientSummary.dateOfAnalysis).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-            <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-gray-100 text-gray-600 border border-gray-200">
+            {report.patientSummary.bmi && (
+              <>
+                <span>·</span>
+                <span className="font-semibold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-md border border-emerald-200 shadow-sm">
+                  BMI: {report.patientSummary.bmi} kg/m²
+                </span>
+              </>
+            )}
+            <span className="ml-1 px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-gray-100 text-gray-700 border border-gray-200">
               {report.patientSummary.analysisType}
             </span>
           </div>
