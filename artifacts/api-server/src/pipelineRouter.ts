@@ -123,6 +123,14 @@ async function* parseSSETokens(body: ReadableStream<Uint8Array>): AsyncGenerator
 
 // ── Core AI call (non-streaming) ────────────────────────────────────────────
 
+function normalizeModelName(model: string): string {
+  const trimmed = model.trim();
+  if (trimmed === "llama-3.1-70b-versatile" || trimmed === "llama-3.1-70b") {
+    return "llama-3.3-70b-versatile";
+  }
+  return trimmed;
+}
+
 async function callProvider(
   prompt: string,
   systemPrompt: string,
@@ -135,7 +143,8 @@ async function callProvider(
   const { apiKey: defaultApiKey, baseUrl: defaultBaseUrl, model: defaultConfiguredModel } = getAIConfig();
   const apiKey = overrideApiKey || defaultApiKey;
   const baseUrl = (overrideBaseUrl || defaultBaseUrl || "").replace(/\/+$/, "");
-  const configuredModel = overrideModel || defaultConfiguredModel;
+  const rawModel = overrideModel || defaultConfiguredModel;
+  const configuredModel = normalizeModelName(rawModel);
 
   if (!apiKey) {
     return { content: "", error: "AI_API_KEY not configured. Set AI_API_KEY, AI_BASE_URL, and AI_MODEL environment variables.", partial: true };
@@ -162,7 +171,7 @@ async function callProvider(
       if (!modelsToTry.includes(m)) modelsToTry.push(m);
     }
   } else if (baseUrl.includes("groq.com")) {
-    for (const m of ["llama-3.3-70b-versatile", "llama-3.1-70b-versatile", "mixtral-8x7b-32768", "llama3-70b-8192"]) {
+    for (const m of ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "llama3-70b-8192", "mixtral-8x7b-32768"]) {
       if (!modelsToTry.includes(m)) modelsToTry.push(m);
     }
   }
@@ -224,7 +233,8 @@ export async function* streamAI(
   systemPrompt: string,
   language = "English"
 ): AsyncGenerator<string> {
-  const { apiKey, baseUrl, model } = getAIConfigForStage("chat_reason");
+  const { apiKey, baseUrl, model: rawModel } = getAIConfigForStage("chat_reason");
+  const model = normalizeModelName(rawModel);
 
   if (!apiKey || !baseUrl) {
     yield "Error: AI provider not configured. The server administrator needs to set AI_API_KEY, AI_BASE_URL, and AI_MODEL environment variables.";
