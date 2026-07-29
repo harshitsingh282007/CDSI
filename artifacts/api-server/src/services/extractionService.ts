@@ -219,6 +219,71 @@ function extractPatientInfo(text: string): { name: string | null; age: number | 
   };
 }
 
+function extractGenericTableLabs(text: string): LabParameter[] {
+  const labs: LabParameter[] = [];
+  const lines = text.split("\n");
+  const ignoreWords = ["page", "patient", "name", "date", "doctor", "hospital", "pathology", "sample", "barcode", "report", "method", "unit", "result", "status", "biological", "ref", "interval", "department", "test name"];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.length < 8) continue;
+
+    // Line parser: Test Name ... Number value ... Unit ... Status (H/L/N/C) ... Reference Range
+    const match = trimmed.match(/^([a-zA-Z0-9\s\(\)\-\.\/]{3,45})\s+([0-9]+\.?[0-9]*)\s*([a-zA-Z%\/µu0-9\^\-]{1,15})?\s*([HLNC])?\s*([0-9]+\.?[0-9]*\s*[\-\–\:]\s*[0-9]+\.?[0-9]*)?/i);
+
+    if (match && match[1] && match[2]) {
+      const name = match[1].trim();
+      const lowerName = name.toLowerCase();
+
+      if (ignoreWords.some((word) => lowerName.startsWith(word) || lowerName.endsWith(word))) continue;
+      if (name.length < 3 || /^[0-9]+$/.test(name)) continue;
+
+      const valStr = match[2];
+      const unit = match[3] || null;
+      const flag = match[4]?.toUpperCase();
+      const ref = match[5] || null;
+
+      let status: LabParameter["status"] = "normal";
+      if (flag === "L") status = "low";
+      else if (flag === "H") status = "high";
+      else if (flag === "C") status = "critical";
+
+      let panel = "Other";
+      if (/wbc|rbc|hb|hemoglobin|hematocrit|platelet|neutrophil|lymphocyte|eosinophil|monocyte|mcv|mch/i.test(name)) panel = "CBC";
+      else if (/bilirubin|sgot|sgpt|ast|alt|alp|albumin|protein|globulin/i.test(name)) panel = "LFT";
+      else if (/creatinine|urea|bun|uric|egfr/i.test(name)) panel = "KFT";
+      else if (/tsh|t3|t4|thyroid/i.test(name)) panel = "Thyroid";
+      else if (/vitamin|vit d|vit b/i.test(name)) panel = "Vitamins";
+      else if (/calcium|potassium|sodium|chloride|phosphorus/i.test(name)) panel = "Electrolytes";
+      else if (/glucose|sugar|hba1c/i.test(name)) panel = "Glucose";
+      else if (/urine|pus|ep cells|casts|crystals/i.test(name)) panel = "Urine";
+
+      labs.push({
+        name,
+        value: valStr,
+        unit,
+        referenceRange: ref,
+        status,
+        interpretation: `Extracted result: ${valStr}${unit ? " " + unit : ""}`,
+        panel,
+      });
+    }
+  }
+
+  return labs;
+}
+
+function deduplicatePrescriptions(meds: PrescriptionItem[]): PrescriptionItem[] {
+  const seen = new Map<string, PrescriptionItem>();
+  for (const med of meds) {
+    const key = med.medicineName.toLowerCase().trim();
+    if (!seen.has(key)) {
+      seen.set(key, med);
+    }
+  }
+  return Array.from(seen.values());
+}
+
 export async function extractStructuredData(
   medicalContext: string,
   language = "English"
@@ -253,21 +318,23 @@ export async function extractStructuredData(
     if (!patientSex && chunkResults.patientSex) patientSex = chunkResults.patientSex;
   }
 
-  // Deterministic regex fallbacks if AI extraction yielded missing data
-  if (allLabs.length === 0) {
-    const regexLabs = extractLabsRegex(medicalContext);
-    if (regexLabs.length > 0) {
-      logger.info({ count: regexLabs.length }, "Extracted labs via regex fallback");
-      allLabs.push(...regexLabs);
-    }
+  // Double check layer: ALWAYS run generic line table parser & regex fallbacks to catch any missing labs/prescriptions
+  const genericLabs = extractGenericTableLabs(medicalContext);
+  if (genericLabs.length > 0) {
+    logger.info({ count: genericLabs.length }, "Extracted labs via generic table parser 2nd check");
+    allLabs.push(...genericLabs);
   }
 
-  if (allPrescriptions.length === 0) {
-    const regexMeds = extractPrescriptionsRegex(medicalContext);
-    if (regexMeds.length > 0) {
-      logger.info({ count: regexMeds.length }, "Extracted prescriptions via regex fallback");
-      allPrescriptions.push(...regexMeds);
-    }
+  const regexLabs = extractLabsRegex(medicalContext);
+  if (regexLabs.length > 0) {
+    logger.info({ count: regexLabs.length }, "Extracted labs via regex parser 2nd check");
+    allLabs.push(...regexLabs);
+  }
+
+  const regexMeds = extractPrescriptionsRegex(medicalContext);
+  if (regexMeds.length > 0) {
+    logger.info({ count: regexMeds.length }, "Extracted prescriptions via regex 2nd check");
+    allPrescriptions.push(...regexMeds);
   }
 
   const patientInfo = extractPatientInfo(medicalContext);
@@ -277,7 +344,7 @@ export async function extractStructuredData(
 
   return {
     labParameters: deduplicateLabs(allLabs),
-    prescriptions: allPrescriptions,
+    prescriptions: deduplicatePrescriptions(allPrescriptions),
     patientName,
     patientAge,
     patientSex,
