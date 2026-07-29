@@ -81,6 +81,11 @@ router.post("/chat", async (req: Request, res: Response) => {
       const lab = l as { status: string };
       return lab.status !== "normal";
     });
+    const slimFindings = findings.map((f: any) => ({
+      findingText: f.findingText,
+      confidence: f.confidence,
+      category: f.category
+    }));
 
     contextBlock = `\n\n=== PATIENT CLINICAL REPORT ===\n${JSON.stringify({
       patientSummary: report["patientSummary"],
@@ -89,9 +94,8 @@ router.post("/chat", async (req: Request, res: Response) => {
       criticalValues: report["criticalValues"],
       possibleConditions: report["possibleConditions"],
       abnormalLabParameters: abnormalLabs.slice(0, 20),
-      allLabParameters: labParams.slice(0, 30),
       prescriptions: report["prescriptions"],
-      findings: findings.slice(0, 25),
+      findings: slimFindings.slice(0, 25),
       nextSteps: report["nextSteps"],
       organSystems: report["organSystems"],
       psychiatricSummary: report["psychiatricSummary"],

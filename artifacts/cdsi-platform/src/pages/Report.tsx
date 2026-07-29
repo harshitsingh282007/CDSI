@@ -215,7 +215,7 @@ function LabPanelChart({ labs }: { labs: Array<{ panel?: string | null; status: 
 function ConfidenceChart({ findings }: { findings: ExtendedFinding[] }) {
   if (findings.length === 0) return null;
   const data = findings.slice(0, 8).map(f => ({
-    name: f.findingText.length > 28 ? f.findingText.slice(0, 26) + '…' : f.findingText,
+    name: f.findingText,
     confidence: f.confidence,
     fill: f.confidence >= 80 ? '#10b981' : f.confidence >= 60 ? '#f59e0b' : '#9ca3af',
   }));
@@ -224,8 +224,8 @@ function ConfidenceChart({ findings }: { findings: ExtendedFinding[] }) {
     <ResponsiveContainer width="100%" height={Math.min(data.length * 36 + 20, 310)}>
       <BarChart data={data} layout="vertical" margin={{ top: 0, right: 12, left: 4, bottom: 0 }}>
         <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10 }} tickFormatter={v => `${v}%`} />
-        <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={160} />
-        <Tooltip formatter={(v: number) => [`${v}%`, 'Confidence']} contentStyle={{ borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 12 }} />
+        <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={220} />
+        <Tooltip formatter={(v: number) => [`${v}%`, 'Confidence']} contentStyle={{ borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 12, maxWidth: '300px', whiteSpace: 'normal' }} />
         <Bar dataKey="confidence" radius={[0, 4, 4, 0]}>
           {data.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
         </Bar>
@@ -237,8 +237,8 @@ function ConfidenceChart({ findings }: { findings: ExtendedFinding[] }) {
 // ── Organ System Status Chart ──────────────────────────────────────────────
 function OrganSystemChart({ systems }: { systems: Array<{ system: string; status: string }> }) {
   if (systems.length === 0) return null;
-  const statusScore = (s: string) => s === 'critical' ? 100 : s === 'warning' ? 65 : s === 'borderline' ? 40 : 15;
-  const statusColor = (s: string) => s === 'critical' ? '#ef4444' : s === 'warning' ? '#f59e0b' : s === 'borderline' ? '#f97316' : '#10b981';
+  const statusScore = (s: string) => s === 'critical' ? 100 : s === 'warning' ? 65 : s === 'borderline' ? 40 : s === 'normal' ? 25 : 10;
+  const statusColor = (s: string) => s === 'critical' ? '#ef4444' : s === 'warning' ? '#f59e0b' : s === 'borderline' ? '#f97316' : s === 'normal' ? '#10b981' : '#9ca3af';
   const data = systems.map(sys => ({
     name: sys.system.length > 14 ? sys.system.slice(0, 12) + '…' : sys.system,
     score: statusScore(sys.status),
@@ -391,7 +391,6 @@ export default function Report() {
   const [showAllSystems, setShowAllSystems] = useState(false);
   const [showAllFindings, setShowAllFindings] = useState(false);
   const [showAllDifferentials, setShowAllDifferentials] = useState(false);
-  const [showAllConditions, setShowAllConditions] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -523,12 +522,9 @@ export default function Report() {
 
       {/* ── Critical Alert Banner ── */}
       {safeCriticalValues.length > 0 && (
-        <div className="bg-red-600 text-white px-5 py-3 rounded-xl flex items-center justify-between shadow">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 flex-shrink-0" />
-            <p className="font-bold text-base tracking-tight">Critical Alerts: {safeCriticalValues.length}</p>
-          </div>
-          <span className="text-xs bg-red-700/80 px-3 py-1 rounded-full font-mono text-red-100 font-semibold">{safeCriticalValues.length} Values Exceeded High Risk Thresholds</span>
+        <div className="bg-red-600 text-white px-5 py-4 rounded-xl flex items-center justify-center gap-3 shadow">
+          <AlertTriangle className="w-6 h-6 flex-shrink-0" />
+          <p className="font-black text-2xl tracking-tight">{safeCriticalValues.length} CRITICAL ALERTS</p>
         </div>
       )}
 
@@ -636,9 +632,9 @@ export default function Report() {
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t('labDistribution', language)}</p>
             <LabDonutChart labs={report.labParameters} />
             <div className="flex flex-wrap gap-x-3 gap-y-1 justify-center mt-1">
-              {Object.entries(DONUT_COLORS).filter(([k]) => report.labParameters.some(l => l.status === k)).map(([k, col]) => (
+              {['normal', 'low', 'high', 'critical'].filter(k => report.labParameters.some(l => l.status === k)).map((k) => (
                 <span key={k} className="flex items-center gap-1 text-xs text-gray-600 capitalize">
-                  <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: col }} />{k}
+                  <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: DONUT_COLORS[k] || '#9ca3af' }} />{k}
                 </span>
               ))}
             </div>
@@ -651,7 +647,7 @@ export default function Report() {
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t('organSystems', language)}</p>
             <OrganSystemChart systems={report.organSystems} />
             <div className="flex gap-3 justify-center mt-1">
-              {[['#10b981', 'Normal'], ['#f59e0b', 'Warning'], ['#ef4444', 'Critical']].map(([col, lbl]) => (
+              {[['#10b981', 'Normal'], ['#f59e0b', 'Warning'], ['#ef4444', 'Critical'], ['#9ca3af', 'Unknown']].map(([col, lbl]) => (
                 <span key={lbl} className="flex items-center gap-1 text-xs text-gray-600">
                   <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: col }} />{lbl}
                 </span>
@@ -692,30 +688,16 @@ export default function Report() {
       )}
 
       {/* ── Possible Conditions ── */}
-      {report.possibleConditions && report.possibleConditions.length > 0 && (() => {
-        const visibleConditions = showAllConditions ? report.possibleConditions : report.possibleConditions.slice(0, 4);
-        const hasMore = report.possibleConditions.length > 4;
-
-        return (
+      {report.possibleConditions && report.possibleConditions.length > 0 && (
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
                 <ClipboardList className="w-5 h-5 text-gray-500" />{t('possibleConditions', language)}
               </h2>
-
-              {hasMore && (
-                <button
-                  onClick={() => setShowAllConditions(!showAllConditions)}
-                  className="flex items-center gap-1.5 text-xs text-gray-700 hover:text-gray-900 font-semibold transition-colors border border-gray-200 bg-gray-50 px-2.5 py-1 rounded-lg cursor-pointer"
-                >
-                  <span>{showAllConditions ? 'Show Top 4' : `View All (${report.possibleConditions.length})`}</span>
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showAllConditions ? 'rotate-180' : ''}`} />
-                </button>
-              )}
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {visibleConditions.map((cond, i) => (
+              {report.possibleConditions.map((cond, i) => (
                 <span key={i} className="px-3 py-1.5 bg-white border border-gray-200 rounded-full text-sm font-medium text-gray-700 shadow-sm">
                   {cond}
                 </span>
@@ -723,8 +705,7 @@ export default function Report() {
             </div>
             <p className="text-xs text-gray-400 italic">These are AI-generated possibilities, not confirmed diagnoses. Clinical evaluation is required.</p>
           </div>
-        );
-      })()}
+      )}
 
       {/* ── Organ System Cards (Split Columns: Abnormal Left | Critical Right) ── */}
       {report.organSystems.length > 0 && (() => {

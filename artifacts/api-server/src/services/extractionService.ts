@@ -75,6 +75,8 @@ Rules & Deciphering Instructions:
   * SOS / PRN = As needed | STAT = Immediately | HS = At bedtime
   * PO = Oral | IV = Intravenous | IM = Intramuscular | SC = Subcutaneous
 - Extract EVERY SINGLE test and medication found in the document, even if handwritten or abbreviated.
+- MEDICATION NAMES: Do NOT include dosage forms or frequency instructions in the medicineName (e.g., "TAB. DAILY (B-Complex...)" should be medicineName: "B-Complex Forte + Vit B12 + Biotin", frequency: "Daily").
+- REFERENCE RANGES: Extract the EXACT reference range from the text for every lab test. DO NOT SKIP or omit reference ranges.
 - status "critical": value dangerously outside range
 - status "borderline": value near but within range limits
 - Extract ALL parameters found in CBC, LFT, KFT, thyroid, lipid, electrolytes, HbA1c, glucose, urine, CRP, ESR, vitamins, infectious serology, Widal, blood culture, cancer markers

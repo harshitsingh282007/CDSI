@@ -224,8 +224,8 @@ async function callProvider(
         lastError = `AI API error: ${res.status} ${err}`;
         logger.warn({ model: currentModel, status: res.status, attempt, err }, "AI provider call failed");
 
-        // If 503 (High Demand) or 429 (Rate Limit) or 5xx, try next attempt or switch to fallback model
-        if (res.status === 503 || res.status === 429 || res.status >= 500) {
+        // If 503 (High Demand), 429 (Rate Limit), 413 (Payload Too Large) or 5xx, try next attempt or switch to fallback model
+        if (res.status === 503 || res.status === 429 || res.status === 413 || res.status >= 500) {
           continue;
         }
 
