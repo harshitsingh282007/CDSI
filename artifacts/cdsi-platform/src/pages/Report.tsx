@@ -416,8 +416,14 @@ export default function Report() {
     setSortConfig(prev => (!prev || prev.key !== key) ? { key, direction: 'asc' } : prev.direction === 'asc' ? { key, direction: 'desc' } : null);
   };
 
-  const filteredLabs = report.labParameters
-    .filter(l => l.name.toLowerCase().includes(labSearch.toLowerCase()) || (l.panel?.toLowerCase().includes(labSearch.toLowerCase())))
+  const safeLabParameters = report.labParameters ?? [];
+  const safeFindings = report.findings ?? [];
+  const safeCriticalValues = report.criticalValues ?? [];
+  const safePrescriptions = report.prescriptions ?? [];
+  const safeOrganSystems = report.organSystems ?? [];
+
+  const filteredLabs = safeLabParameters
+    .filter(l => (l.name || '').toLowerCase().includes(labSearch.toLowerCase()) || (l.panel?.toLowerCase().includes(labSearch.toLowerCase())))
     .sort((a, b) => {
       if (!sortConfig) return 0;
       const aVal = (a as Record<string, unknown>)[sortConfig.key] ?? '';
@@ -425,13 +431,13 @@ export default function Report() {
       return String(aVal) < String(bVal) ? (sortConfig.direction === 'asc' ? -1 : 1) : String(aVal) > String(bVal) ? (sortConfig.direction === 'asc' ? 1 : -1) : 0;
     });
 
-  const confirmedFindings = report.findings.filter(f => f.category === 'confirmed');
-  const possibleDifferentials = report.findings.filter(f => f.category === 'possible' || f.category === 'differential');
-  const recommendations = report.findings.filter(f => f.category === 'recommendation');
+  const confirmedFindings = safeFindings.filter(f => f.category === 'confirmed');
+  const possibleDifferentials = safeFindings.filter(f => f.category === 'possible' || f.category === 'differential');
+  const recommendations = safeFindings.filter(f => f.category === 'recommendation');
 
-  const abnormalCount = report.labParameters.filter(l => l.status !== 'normal').length;
-  const criticalCount = report.labParameters.filter(l => l.status === 'critical').length;
-  const normalCount = report.labParameters.filter(l => l.status === 'normal').length;
+  const abnormalCount = safeLabParameters.filter(l => l.status !== 'normal').length;
+  const criticalCount = safeLabParameters.filter(l => l.status === 'critical').length;
+  const normalCount = safeLabParameters.filter(l => l.status === 'normal').length;
 
   const riskColors = report.riskAssessment ? getRiskColors(report.riskAssessment.level) : null;
 
@@ -484,18 +490,18 @@ export default function Report() {
     <div className="w-full flex flex-col gap-6 pb-24">
 
       {/* ── Critical Alert Banner ── */}
-      {report.criticalValues.length > 0 && (
+      {safeCriticalValues.length > 0 && (
         <div className="bg-red-600 text-white px-5 py-4 rounded-xl flex items-start gap-3 shadow">
           <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-semibold">⚠ {report.criticalValues.length} {t('criticalAlerts', language)} Detected</p>
-            <p className="text-sm mt-1 text-red-100">{report.criticalValues.join(' · ')}</p>
+            <p className="font-semibold">⚠ {safeCriticalValues.length} {t('criticalAlerts', language)} Detected</p>
+            <p className="text-sm mt-1 text-red-100">{safeCriticalValues.join(' · ')}</p>
           </div>
         </div>
       )}
 
       {/* ── Error Banner (Only shown if report failed completely with no labs) ── */}
-      {report.hasError && report.labParameters.length === 0 && (
+      {report.hasError && safeLabParameters.length === 0 && (
         <div className="bg-red-50 text-red-700 px-5 py-4 rounded-xl flex items-start gap-3 shadow border border-red-200">
           <ShieldAlert className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <div>
