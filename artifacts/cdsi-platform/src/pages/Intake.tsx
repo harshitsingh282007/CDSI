@@ -99,11 +99,6 @@ export default function Intake() {
     setJobId(targetJobId);
     sessionStorage.setItem('cdsi_job_id', targetJobId);
 
-    const adaptiveQA = Object.entries(adaptiveAnswers).map(([idx, ans]) => ({
-      question: adaptiveQuestions[parseInt(idx, 10)] || `Question ${parseInt(idx, 10) + 1}`,
-      answer: ans
-    }));
-
     const intakeData: Record<string, unknown> = {
       analysisType,
       patientName: patientName || null,
@@ -121,7 +116,6 @@ export default function Intake() {
       familyHistory: familyHistory.length > 0 ? familyHistory : undefined,
       smoking,
       alcohol,
-      adaptiveQA: adaptiveQA.length > 0 ? adaptiveQA : undefined,
       phq9Answers: phq9Answers.some(a => a > -1) ? phq9Answers.map(a => a === -1 ? 0 : a) : undefined,
       gad7Answers: gad7Answers.some(a => a > -1) ? gad7Answers.map(a => a === -1 ? 0 : a) : undefined,
       sleepQuality: sleepQuality ? parseInt(sleepQuality, 10) : null,
