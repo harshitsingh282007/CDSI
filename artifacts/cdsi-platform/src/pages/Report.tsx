@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useCDSI } from '../context/CDSIContext';
 import { t } from '../translations';
-import { useGetChatHistory, getGetChatHistoryQueryKey } from '@workspace/api-client-react';
+import { useGetChatHistory, getGetChatHistoryQueryKey, useGetReport, getGetReportQueryKey, ClinicalReport } from '@workspace/api-client-react';
 import { getApiUrl } from '../lib/api-url';
 import { getBmiCategory } from './Intake';
 
