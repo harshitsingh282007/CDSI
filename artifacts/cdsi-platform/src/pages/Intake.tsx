@@ -197,66 +197,90 @@ export default function Intake() {
         </div>
       )}
 
-      {/* Analysis Type */}
+      {/* Standard Analysis Type */}
       <div className="flex flex-col gap-4">
-        <h2 className="text-sm font-semibold text-[#111827] uppercase tracking-wider">Analysis Type</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Standard Analysis Type</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button
+            type="button"
             onClick={() => setAnalysisType('physical')}
-            className={`p-5 border rounded-xl flex flex-col items-center text-center gap-3 transition-all ${
-              analysisType === 'physical' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm ring-1 ring-[#16A34A]' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
+            className={`p-6 border rounded-xl flex flex-col items-center text-center gap-3 transition-all ${
+              analysisType === 'physical' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm ring-2 ring-[#16A34A]' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
             }`}
           >
             <div className={`p-3 rounded-full ${analysisType === 'physical' ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280]'}`}>
               <Stethoscope className="w-6 h-6" />
             </div>
-            <span className={`font-semibold text-sm ${analysisType === 'physical' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Physical Health</span>
+            <div>
+              <span className={`font-semibold text-sm block ${analysisType === 'physical' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Physical Health</span>
+              <span className="text-xs text-gray-500 mt-1 block">Full physical lab & clinical diagnosis</span>
+            </div>
           </button>
           
           <button
+            type="button"
             onClick={() => setAnalysisType('psychiatric')}
-            className={`p-5 border rounded-xl flex flex-col items-center text-center gap-3 transition-all ${
-              analysisType === 'psychiatric' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm ring-1 ring-[#16A34A]' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
+            className={`p-6 border rounded-xl flex flex-col items-center text-center gap-3 transition-all ${
+              analysisType === 'psychiatric' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm ring-2 ring-[#16A34A]' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
             }`}
           >
             <div className={`p-3 rounded-full ${analysisType === 'psychiatric' ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280]'}`}>
               <Brain className="w-6 h-6" />
             </div>
-            <span className={`font-semibold text-sm ${analysisType === 'psychiatric' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Psychiatric Health</span>
+            <div>
+              <span className={`font-semibold text-sm block ${analysisType === 'psychiatric' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Psychiatric Health</span>
+              <span className="text-xs text-gray-500 mt-1 block">PHQ-9 & GAD-7 mental health evaluation</span>
+            </div>
           </button>
 
           <button
+            type="button"
             onClick={() => setAnalysisType('both')}
-            className={`p-5 border rounded-xl flex flex-col items-center text-center gap-3 transition-all ${
-              analysisType === 'both' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm ring-1 ring-[#16A34A]' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
+            className={`p-6 border rounded-xl flex flex-col items-center text-center gap-3 transition-all ${
+              analysisType === 'both' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm ring-2 ring-[#16A34A]' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
             }`}
           >
             <div className={`p-3 rounded-full flex gap-1 ${analysisType === 'both' ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280]'}`}>
               <HeartPulse className="w-5 h-5" />
               <Brain className="w-5 h-5" />
             </div>
-            <span className={`font-semibold text-sm ${analysisType === 'both' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Physical + Psychiatric</span>
+            <div>
+              <span className={`font-semibold text-sm block ${analysisType === 'both' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Physical + Psychiatric</span>
+              <span className="text-xs text-gray-500 mt-1 block">Combined multi-system clinical evaluation</span>
+            </div>
           </button>
+        </div>
+      </div>
 
+      {/* Advanced Analysis Type (Dedicated Section) */}
+      <div className="flex flex-col gap-4 pt-2">
+        <h2 className="text-xs font-bold text-emerald-700 uppercase tracking-widest flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-emerald-600" />
+          Advanced Analysis Type
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button
+            type="button"
             onClick={() => setAnalysisType('adaptive')}
-            className={`p-5 border rounded-xl flex flex-col items-center text-center gap-2 transition-all relative overflow-hidden ${
-              analysisType === 'adaptive' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-md ring-2 ring-[#16A34A]' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
+            className={`p-6 border rounded-xl flex flex-col items-center text-center gap-3 transition-all relative overflow-hidden ${
+              analysisType === 'adaptive' ? 'border-emerald-600 bg-[#F0FDF4] shadow-md ring-2 ring-emerald-600' : 'border-emerald-200/60 bg-gradient-to-b from-emerald-50/40 to-white hover:border-emerald-300'
             }`}
           >
-            <span className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-              ✨ AI Adaptive
+            <span className="bg-emerald-600 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
+              ✨ Autonomous AI
             </span>
-            <div className={`p-2.5 rounded-full flex gap-1 ${analysisType === 'adaptive' ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280]'}`}>
-              <Sparkles className="w-5 h-5 text-amber-500" />
-              <Activity className="w-5 h-5 text-emerald-600" />
+            <div className={`p-3 rounded-full flex gap-1.5 ${analysisType === 'adaptive' ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-50 text-emerald-600'}`}>
+              <Sparkles className="w-6 h-6 text-amber-500" />
+              <Activity className="w-6 h-6 text-emerald-600" />
             </div>
-            <span className={`font-semibold text-sm ${analysisType === 'adaptive' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>
-              Adaptive AI Analysis
-            </span>
-            <span className="text-[11px] text-gray-500 leading-tight">
-              Case-based dynamic questions & auto triage
-            </span>
+            <div>
+              <span className={`font-bold text-base block ${analysisType === 'adaptive' ? 'text-emerald-700' : 'text-gray-900'}`}>
+                Adaptive AI Analysis
+              </span>
+              <span className="text-xs text-gray-500 font-medium mt-1 block">
+                Smart AI Triage & Case Adaptive QA
+              </span>
+            </div>
           </button>
         </div>
       </div>
