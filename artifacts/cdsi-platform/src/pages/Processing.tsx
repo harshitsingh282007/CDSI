@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { CheckCircle2, Loader2, AlertCircle, RotateCcw, FileText, Cpu, Brain, ClipboardList } from 'lucide-react';
 import { useCDSI } from '../context/CDSIContext';
 import { useGetJobStatus, useGetReport, getGetJobStatusQueryKey, getGetReportQueryKey } from '@workspace/api-client-react';
+import DecryptedText from '../components/DecryptedText';
 
 const STEPS = [
   { id: 'extracting',  label: 'Extracting document text',       icon: FileText,     range: [0, 50]  },
@@ -183,9 +184,17 @@ export default function Processing() {
                   <Brain className="absolute inset-0 m-auto w-7 h-7 text-[#16A34A]" />
                 </div>
                 <h1 className="text-2xl font-bold text-[#111827]">Analysing Clinical Data</h1>
-                <p className="text-[#6B7280] text-sm min-h-[20px] transition-all duration-300">
-                  {backendMessage || AI_MESSAGES[aiMessageIdx]}
-                </p>
+                <div className="text-[#6B7280] text-sm min-h-[20px] transition-all duration-300">
+                  <DecryptedText
+                    key={backendMessage || AI_MESSAGES[aiMessageIdx]}
+                    text={backendMessage || AI_MESSAGES[aiMessageIdx]}
+                    speed={35}
+                    maxIterations={12}
+                    animateOn="view"
+                    className="font-medium text-[#111827]"
+                    encryptedClassName="text-[#16A34A] opacity-80"
+                  />
+                </div>
               </>
             )}
           </div>
@@ -215,7 +224,18 @@ export default function Processing() {
                       isActive    ? 'text-[#16A34A]' :
                                     'text-[#9CA3AF]'
                     }`}>
-                      {step.label}
+                      {isActive ? (
+                        <DecryptedText
+                          text={step.label}
+                          speed={40}
+                          maxIterations={15}
+                          animateOn="view"
+                          className="font-semibold text-[#16A34A]"
+                          encryptedClassName="text-[#16A34A] opacity-70 font-mono"
+                        />
+                      ) : (
+                        step.label
+                      )}
                     </span>
                     {isCompleted && (
                       <span className="ml-2 text-xs text-[#16A34A]">✓</span>
