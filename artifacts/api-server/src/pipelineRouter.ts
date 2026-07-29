@@ -126,9 +126,11 @@ async function callProvider(
   prompt: string,
   systemPrompt: string,
   language: string,
-  jsonMode: boolean
+  jsonMode: boolean,
+  overrideModel?: string
 ): Promise<AIResponse> {
-  const { apiKey, baseUrl, model: configuredModel } = getAIConfig();
+  const { apiKey, baseUrl, model: defaultConfiguredModel } = getAIConfig();
+  const configuredModel = overrideModel || defaultConfiguredModel;
 
   if (!apiKey) {
     return { content: "", error: "AI_API_KEY not configured. Set AI_API_KEY, AI_BASE_URL, and AI_MODEL environment variables.", partial: true };
@@ -262,6 +264,19 @@ export async function* streamAI(
 
 // ── Public API ──────────────────────────────────────────────────────────────
 
+export function getStageModel(stage: PipelineStage, defaultModel: string): string {
+  if (stage === "entity_extract" || stage === "prescription_parse" || stage === "lab_structure" || stage === "ocr_cleanup") {
+    return process.env.EXTRACTION_AI_MODEL || defaultModel;
+  }
+  if (stage === "correlate" || stage === "diagnose" || stage === "report_generate" || stage === "confidence_score") {
+    return process.env.REASONING_AI_MODEL || defaultModel;
+  }
+  if (stage === "chat_reason") {
+    return process.env.CHAT_AI_MODEL || defaultModel;
+  }
+  return defaultModel;
+}
+
 export async function callAI(
   stage: PipelineStage,
   prompt: string,
@@ -271,5 +286,8 @@ export async function callAI(
   const language = options?.language ?? "English";
   const jsonMode = options?.jsonMode ?? false;
 
-  return callProvider(prompt, systemPrompt, language, jsonMode);
+  const { model: defaultModel } = getAIConfig();
+  const stageModel = getStageModel(stage, defaultModel);
+
+  return callProvider(prompt, systemPrompt, language, jsonMode, stageModel);
 }
