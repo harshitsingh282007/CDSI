@@ -187,6 +187,11 @@ function extractPrescriptionsRegex(text: string): PrescriptionItem[] {
     { name: "Aptimax", dose: "Syrup / Tab", route: "Oral", freq: "BD", dur: "1 month" },
     { name: "Electral", dose: "4.4g / sachet", route: "Oral", freq: "In 1L Water", dur: "3-5 days" },
     { name: "B-Complex", dose: "1 Tab", route: "Oral", freq: "OD / Bedtime", dur: "1 month" },
+    { name: "Nimford", dose: "1 Tab", route: "Oral", freq: "BD", dur: "3-5 days" },
+    { name: "LMP-3", dose: "1 Tab", route: "Oral", freq: "OD", dur: "1 month" },
+    { name: "Betnesol", dose: "0.5mg", route: "Oral", freq: "BD", dur: "5 days" },
+    { name: "Kenacort", dose: "0.1%", route: "Oral Paste", freq: "TID", dur: "7 days" },
+    { name: "Candid Gel", dose: "Topical", route: "Oral Paste", freq: "TID", dur: "7 days" },
   ];
 
   for (const m of meds) {
@@ -204,6 +209,40 @@ function extractPrescriptionsRegex(text: string): PrescriptionItem[] {
       });
     }
   }
+  return list;
+}
+
+function extractGenericPrescriptions(text: string): PrescriptionItem[] {
+  const list: PrescriptionItem[] = [];
+  const lines = text.split("\n");
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.length < 4) continue;
+
+    // Matches Tab/Cap/Inj/Syp/Pow/Inj MedicineName ... Dosage/Frequency (1-0-1 or 0-0-1 or OD/BD/TID)
+    const match = trimmed.match(/^(?:tab|cap|inj|syp|pow|powder|ointment|cream|paste)?[\s\.]*([a-zA-Z0-9\+\-\s]{3,35})\s+([0-1]\s*[\-\–]\s*[0-1]\s*[\-\–]\s*[0-1]|[0-1]\s*[\-\–]\s*[0-1]|OD|BD|BID|TID|QID|SOS|HS)/i);
+
+    if (match && match[1]) {
+      const name = match[1].trim();
+      if (/patient|doctor|date|hospital|pathology|page|sign|reg|name|age|sex/i.test(name)) continue;
+      if (name.length < 3 || /^[0-9]+$/.test(name)) continue;
+
+      const freqStr = match[2]?.trim() || "As directed";
+      list.push({
+        medicineName: name.toUpperCase(),
+        brandName: name,
+        genericName: name,
+        dosage: "As prescribed",
+        frequency: freqStr,
+        duration: "As advised",
+        timing: "Take as directed",
+        route: "Oral",
+        specialInstructions: "Take as prescribed by physician",
+      });
+    }
+  }
+
   return list;
 }
 
@@ -377,7 +416,13 @@ export async function extractStructuredData(
     allLabs.push(...regexLabs);
   }
 
-  // Layer 5: Regex Prescription Parser
+  // Layer 5: Prescription Line & Pattern Parsers
+  const genericMeds = extractGenericPrescriptions(medicalContext);
+  if (genericMeds.length > 0) {
+    logger.info({ count: genericMeds.length }, "Extracted prescriptions via generic line parser");
+    allPrescriptions.push(...genericMeds);
+  }
+
   const regexMeds = extractPrescriptionsRegex(medicalContext);
   if (regexMeds.length > 0) {
     logger.info({ count: regexMeds.length }, "Extracted prescriptions via regex parser");

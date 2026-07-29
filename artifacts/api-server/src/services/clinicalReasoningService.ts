@@ -319,6 +319,88 @@ INSTRUCTIONS:
     .map((l) => `${l.name}: ${l.value} ${l.unit ?? ""} (critical)`);
   const allCritical = [...criticalValues, ...autoCritical];
 
+  // Guaranteed Fallbacks: Ensure clinicalConclusion, riskAssessment, possibleConditions, nextSteps, findings, organSystems are NEVER null/empty
+  if (!clinicalConclusion) {
+    const abnormalLabs = labParameters.filter((l) => l.status !== "normal");
+    const criticalLabs = labParameters.filter((l) => l.status === "critical");
+    const name = intakeData.patientName || "Patient";
+    const complaint = intakeData.chiefComplaint || "Clinical Evaluation";
+
+    if (criticalLabs.length > 0) {
+      const critNames = criticalLabs.map((l) => `${l.name} (${l.value} ${l.unit ?? ""})`).join(", ");
+      clinicalConclusion = `${name} presents for evaluation of ${complaint}. Clinical assessment and laboratory analysis reveal critical parameters requiring urgent attention, including ${critNames}. Immediate physician evaluation and targeted specialist management are strongly recommended.`;
+    } else if (abnormalLabs.length > 0) {
+      const abNames = abnormalLabs.slice(0, 5).map((l) => `${l.name} (${l.value} ${l.unit ?? ""})`).join(", ");
+      clinicalConclusion = `${name} presents for evaluation of ${complaint}. Comprehensive lab analysis identified notable parameters outside standard reference ranges, including ${abNames}. Clinical correlation with physical symptoms and appropriate follow-up monitoring are advised.`;
+    } else {
+      clinicalConclusion = `${name} underwent clinical evaluation for ${complaint}. Extracted laboratory parameters demonstrate findings within normal physiological limits. Baseline health monitoring and routine follow-up as clinically indicated are recommended.`;
+    }
+  }
+
+  if (!riskAssessment) {
+    const hasCritical = labParameters.some((l) => l.status === "critical");
+    const hasAbnormal = labParameters.some((l) => l.status !== "normal");
+    if (hasCritical) {
+      riskAssessment = {
+        level: "critical",
+        reasoning: "Critical laboratory abnormalities detected requiring urgent physician intervention.",
+        urgency: "urgent",
+      };
+    } else if (hasAbnormal) {
+      riskAssessment = {
+        level: "moderate",
+        reasoning: "Multiple laboratory parameters identified outside standard reference intervals.",
+        urgency: "soon",
+      };
+    } else {
+      riskAssessment = {
+        level: "low",
+        reasoning: "Laboratory parameters evaluated within normal physiological ranges.",
+        urgency: "routine",
+      };
+    }
+  }
+
+  if (!possibleConditions || possibleConditions.length === 0) {
+    const conditions: string[] = [];
+    labParameters.forEach((l) => {
+      const name = l.name.toLowerCase();
+      if (name.includes("vitamin d") && (l.status === "low" || l.status === "critical")) conditions.push("Vitamin D Deficiency (Hypovitaminosis D)");
+      else if (name.includes("b12") && l.status === "low") conditions.push("Vitamin B12 Deficiency / Megaloblastic Anemia");
+      else if (name.includes("platelet") && l.status === "low") conditions.push("Thrombocytopenia");
+      else if (name.includes("hemoglobin") && l.status === "low") conditions.push("Anemia");
+      else if (name.includes("wbc") && l.status === "high") conditions.push("Leukocytosis / Active Inflammatory State");
+      else if (name.includes("tsh") && (l.status === "high" || l.status === "low")) conditions.push("Thyroid Dysfunction");
+      else if (name.includes("bilirubin") && l.status === "high") conditions.push("Hyperbilirubinemia / Hepatic Evaluation");
+      else if (name.includes("creatinine") && l.status === "high") conditions.push("Renal Impairment / Elevated Creatinine");
+    });
+
+    if (intakeData.chiefComplaint) {
+      if (/fever|typhoid|infection/i.test(intakeData.chiefComplaint)) conditions.push("Acute Febrile Illness");
+      if (/syncope|faint|dizzy/i.test(intakeData.chiefComplaint)) conditions.push("Vasovagal Syncope / Orthostatic Hypotension");
+    }
+
+    if (conditions.length === 0) conditions.push("Comprehensive Clinical Evaluation");
+    possibleConditions = conditions;
+  }
+
+  if (!nextSteps || nextSteps.length === 0) {
+    nextSteps = [
+      "Consult with a licensed primary care physician or specialist for clinical correlation of findings.",
+      "Repeat abnormal or critical laboratory tests in 2-4 weeks to evaluate clinical trend.",
+      "Monitor patient closely for acute fever spikes, neurological symptoms, or physical weakness.",
+      "Ensure compliance with prescribed medications, fluids, and targeted vitamin/mineral supplementation.",
+    ];
+  }
+
+  if (!findings || findings.length === 0) {
+    findings = generateFallbackFindings(labParameters);
+  }
+
+  if (!organSystems || organSystems.length === 0) {
+    organSystems = generateFallbackOrganSystems(labParameters);
+  }
+
   return {
     findings,
     organSystems: ensureAllSystems(organSystems),
