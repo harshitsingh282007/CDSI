@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Route, Switch } from 'wouter';
 import { CDSIProvider } from './context/CDSIContext';
 import { Sidebar } from './components/Sidebar';
+import { AuthGate } from './components/AuthGate';
 import Upload from './pages/Upload';
 import Intake from './pages/Intake';
 import Processing from './pages/Processing';
@@ -49,16 +50,18 @@ function AppRouter() {
     <Switch>
       <Route path="/login" component={Login} />
       <Route path="*">
-        <Layout>
-          <Switch>
-            <Route path="/" component={Upload} />
-            <Route path="/intake" component={Intake} />
-            <Route path="/processing" component={Processing} />
-            <Route path="/report" component={Report} />
-            <Route path="/settings" component={Settings} />
-            <Route component={NotFound} />
-          </Switch>
-        </Layout>
+        <AuthGate>
+          <Layout>
+            <Switch>
+              <Route path="/" component={Upload} />
+              <Route path="/intake" component={Intake} />
+              <Route path="/processing" component={Processing} />
+              <Route path="/report" component={Report} />
+              <Route path="/settings" component={Settings} />
+              <Route component={NotFound} />
+            </Switch>
+          </Layout>
+        </AuthGate>
       </Route>
     </Switch>
   );
