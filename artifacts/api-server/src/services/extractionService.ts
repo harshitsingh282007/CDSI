@@ -401,6 +401,36 @@ Return strictly valid JSON matching the exact schema.`;
   return { labs: [], prescriptions: [] };
 }
 
+function splitTextIntoPages(text: string): string[] {
+  if (!text.trim()) return [];
+
+  // 1. Split by explicit [DOC: ... | PAGE: N] markers
+  const docPageSplit = text.split(/(?=\[DOC:[^\]]+?\| PAGE:\s*\d+\])/i).filter((p) => p.trim().length > 0);
+  if (docPageSplit.length > 1) {
+    return docPageSplit;
+  }
+
+  // 2. Split by form feed \f
+  const ffSplit = text.split("\f").filter((p) => p.trim().length > 0);
+  if (ffSplit.length > 1) {
+    return ffSplit;
+  }
+
+  // 3. Split by Page N or section dividers
+  const pageMarkerSplit = text.split(/(?=\bPage\s+\d+\b|\-\-\-\s*Page|\b[0-9]+\s+of\s+[0-9]+\b)/i).filter((p) => p.trim().length > 0);
+  if (pageMarkerSplit.length > 1) {
+    return pageMarkerSplit;
+  }
+
+  // 4. Fallback: Slice every 3000 chars into page blocks
+  const chunks: string[] = [];
+  const chunkSize = 3000;
+  for (let i = 0; i < text.length; i += chunkSize) {
+    chunks.push(text.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
 export async function extractStructuredData(
   medicalContext: string,
   language = "English",
@@ -416,8 +446,10 @@ export async function extractStructuredData(
   let patientSex: string | null = null;
 
   const imagesList = pageImages ?? [];
-  const textsList = pageTexts ?? [];
+  const textsList = (pageTexts && pageTexts.length > 0) ? pageTexts : splitTextIntoPages(medicalContext);
   const totalPages = Math.max(imagesList.length, textsList.length);
+
+  logger.info({ totalPages, imageCount: imagesList.length, textPageCount: textsList.length }, "Executing Page-by-Page AI Vision & Text Extraction");
 
   // Page-by-Page Extraction: Loops through EACH page individually to extract ALL labs & prescriptions
   if (totalPages > 0) {
