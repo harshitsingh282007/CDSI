@@ -249,12 +249,19 @@ INSTRUCTIONS:
   let nextSteps: string[] = [];
 
   while (retries <= 1) {
-    const response = await callAI("report_generate", prompt, REASONING_SYSTEM_PROMPT, { language });
-    if (response.error) {
-      errors.push(response.error);
-      if (response.timedOut) errors.push("Clinical reasoning timed out");
-      break;
-    }
+    try {
+      // High-speed 4.5s race timeout to guarantee sub-5-second clinical reasoning execution
+      const aiPromise = callAI("report_generate", prompt, REASONING_SYSTEM_PROMPT, { language });
+      const timeoutPromise = new Promise<{ content: string; error?: string }>((resolve) =>
+        setTimeout(() => resolve({ content: "", error: "Fast fallback triggered after 4.5s" }), 4500)
+      );
+
+      const response = await Promise.race([aiPromise, timeoutPromise]);
+
+      if (response.error || !response.content) {
+        if (response.error) errors.push(response.error);
+        break;
+      }
 
     try {
       let jsonStr = response.content;
@@ -293,6 +300,10 @@ INSTRUCTIONS:
           .map((l) => `${l.name}: ${l.value} ${l.unit ?? ""}`);
         organSystems = generateFallbackOrganSystems(labParameters);
       }
+    }
+    } catch (outerErr) {
+      logger.warn({ outerErr }, "Clinical reasoning outer race error");
+      break;
     }
   }
 
