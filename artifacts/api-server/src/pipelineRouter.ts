@@ -25,10 +25,13 @@ function getAIConfig() {
 }
 
 function getCompletionsUrl(baseUrl: string): string {
-  // If the base URL already ends with /chat/completions, use it as-is
-  if (baseUrl.endsWith("/chat/completions")) return baseUrl;
-  // If it ends with /v1 or /v1beta or similar, append /chat/completions
-  return `${baseUrl}/chat/completions`;
+  let url = baseUrl.trim().replace(/\/+$/, "");
+  // Ensure Google Gemini base URL includes /openai endpoint format
+  if (url.includes("generativelanguage.googleapis.com") && !url.includes("/openai")) {
+    url = `${url}/openai`;
+  }
+  if (url.endsWith("/chat/completions")) return url;
+  return `${url}/chat/completions`;
 }
 
 // ── Types ───────────────────────────────────────────────────────────────────
