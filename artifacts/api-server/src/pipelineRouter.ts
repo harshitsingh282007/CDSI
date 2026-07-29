@@ -127,9 +127,13 @@ async function callProvider(
   systemPrompt: string,
   language: string,
   jsonMode: boolean,
-  overrideModel?: string
+  overrideModel?: string,
+  overrideApiKey?: string,
+  overrideBaseUrl?: string
 ): Promise<AIResponse> {
-  const { apiKey, baseUrl, model: defaultConfiguredModel } = getAIConfig();
+  const { apiKey: defaultApiKey, baseUrl: defaultBaseUrl, model: defaultConfiguredModel } = getAIConfig();
+  const apiKey = overrideApiKey || defaultApiKey;
+  const baseUrl = (overrideBaseUrl || defaultBaseUrl || "").replace(/\/+$/, "");
   const configuredModel = overrideModel || defaultConfiguredModel;
 
   if (!apiKey) {
@@ -264,17 +268,21 @@ export async function* streamAI(
 
 // ── Public API ──────────────────────────────────────────────────────────────
 
-export function getStageModel(stage: PipelineStage, defaultModel: string): string {
+export function getAIConfigForStage(stage: PipelineStage) {
+  let prefix = "";
   if (stage === "entity_extract" || stage === "prescription_parse" || stage === "lab_structure" || stage === "ocr_cleanup") {
-    return process.env.EXTRACTION_AI_MODEL || defaultModel;
+    prefix = "EXTRACTION_";
+  } else if (stage === "correlate" || stage === "diagnose" || stage === "report_generate" || stage === "confidence_score") {
+    prefix = "REASONING_";
+  } else if (stage === "chat_reason") {
+    prefix = "CHAT_";
   }
-  if (stage === "correlate" || stage === "diagnose" || stage === "report_generate" || stage === "confidence_score") {
-    return process.env.REASONING_AI_MODEL || defaultModel;
-  }
-  if (stage === "chat_reason") {
-    return process.env.CHAT_AI_MODEL || defaultModel;
-  }
-  return defaultModel;
+
+  const apiKey = getEnvSecure(`${prefix}AI_API_KEY`) || getEnvSecure("AI_API_KEY");
+  const baseUrl = (getEnvSecure(`${prefix}AI_BASE_URL`) || getEnvSecure("AI_BASE_URL") || "").replace(/\/+$/, "");
+  const model = getEnvSecure(`${prefix}AI_MODEL`) || getEnvSecure("AI_MODEL") || "gpt-4o";
+
+  return { apiKey, baseUrl, model };
 }
 
 export async function callAI(
@@ -286,8 +294,7 @@ export async function callAI(
   const language = options?.language ?? "English";
   const jsonMode = options?.jsonMode ?? false;
 
-  const { model: defaultModel } = getAIConfig();
-  const stageModel = getStageModel(stage, defaultModel);
+  const { apiKey, baseUrl, model } = getAIConfigForStage(stage);
 
-  return callProvider(prompt, systemPrompt, language, jsonMode, stageModel);
+  return callProvider(prompt, systemPrompt, language, jsonMode, model, apiKey, baseUrl);
 }
