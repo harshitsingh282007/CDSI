@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getJob, updateJob, reportContextStore, type JobState } from "../store.js";
+import { getJob, updateJob, createJob, reportContextStore, type JobState } from "../store.js";
 import { extractStructuredData } from "../services/extractionService.js";
 import { performClinicalReasoning } from "../services/clinicalReasoningService.js";
 import { logger } from "../lib/logger.js";
