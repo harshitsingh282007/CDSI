@@ -154,6 +154,10 @@ async function callProvider(
     for (const m of ["meta/llama-3.3-70b-instruct", "meta/llama3-70b-instruct", "nvidia/llama-3.1-nemotron-70b-instruct"]) {
       if (!modelsToTry.includes(m)) modelsToTry.push(m);
     }
+  } else if (baseUrl.includes("groq.com")) {
+    for (const m of ["llama-3.3-70b-versatile", "llama-3.1-70b-versatile", "mixtral-8x7b-32768", "llama3-70b-8192"]) {
+      if (!modelsToTry.includes(m)) modelsToTry.push(m);
+    }
   }
 
   let lastError = "";
