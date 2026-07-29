@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useLocation } from 'wouter';
-import { Stethoscope, Brain, Heart, HeartPulse, Check, AlertTriangle, Sparkles, Activity, MessageSquare } from 'lucide-react';
+import { Stethoscope, Brain, AlertTriangle } from 'lucide-react';
 import { useCDSI } from '../context/CDSIContext';
 import { useStartAnalysis, type IntakeFormData, type IntakeFormDataAnalysisType } from '@workspace/api-client-react';
 import { PHQ9_QUESTIONS, GAD7_QUESTIONS } from '../translations';
@@ -53,96 +53,6 @@ export default function Intake() {
   const [lifeStressorsDetails, setLifeStressorsDetails] = useState('');
   const [previousMentalHealthDiagnosis, setPreviousMentalHealthDiagnosis] = useState(false);
   const [mentalHealthDiagnosisDetails, setMentalHealthDiagnosisDetails] = useState('');
-
-  const runAdaptiveAiTriage = async () => {
-    setIsGeneratingAdaptive(true);
-    try {
-      const apiUrl = getApiUrl();
-      if (jobId) {
-        const res = await fetch(`${apiUrl}/api/chat`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            jobId,
-            message: `ACT AS ADAPTIVE CLINICAL TRIAGE ENGINE. Based on patient complaint: "${chiefComplaint || 'General Checkup'}", age: ${age || 'Unknown'}, sex: ${biologicalSex || 'Unknown'}.
-            Generate 3 targeted, case-specific clinical follow-up questions for the patient and evaluate if psychiatric screening (PHQ-9/GAD-7) is indicated.
-            Return strictly raw JSON format: {"questions": ["question 1", "question 2", "question 3"], "psychiatricRecommended": true, "psychiatricReason": "Reason why psychiatric screening is indicated"}`,
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const text = data.text || '';
-          const match = text.match(/\{[\s\S]*\}/);
-          if (match) {
-            const parsed = JSON.parse(match[0]);
-            if (parsed.questions && Array.isArray(parsed.questions)) {
-              setAdaptiveQuestions(parsed.questions);
-            }
-            if (typeof parsed.psychiatricRecommended === 'boolean') {
-              setPsychiatricRecommended(parsed.psychiatricRecommended);
-            }
-            if (parsed.psychiatricReason) {
-              setPsychiatricReason(parsed.psychiatricReason);
-            }
-            return;
-          }
-        }
-      }
-
-      // Complaint-aware fallback adaptive questions
-      const complaintLower = (chiefComplaint || '').toLowerCase();
-      let qList = [
-        "Have you experienced any abdominal discomfort, nausea, or appetite changes?",
-        "Are you currently experiencing joint pain, fatigue, or muscle weakness?",
-        "Do you have a personal or family history of similar symptoms?"
-      ];
-      let recPsych = false;
-      let recReason = "Physical symptoms identified without significant psychiatric markers.";
-
-      if (complaintLower.includes('fever') || complaintLower.includes('typhoid') || complaintLower.includes('widal') || complaintLower.includes('infection')) {
-        qList = [
-          "Have you experienced step-ladder fever patterns or evening temperature spikes?",
-          "Do you have abdominal pain, bloating, or bowel movement changes (constipation/diarrhea)?",
-          "Have you been exposed to untreated water or outside food in the past 2 weeks?"
-        ];
-        recPsych = false;
-      } else if (complaintLower.includes('pain') || complaintLower.includes('headache') || complaintLower.includes('chest')) {
-        qList = [
-          "Does the pain radiate to your arm, back, jaw, or neck?",
-          "On a scale of 1-10, how severe is the pain and what aggravates it?",
-          "Do you experience shortness of breath, sweating, or dizziness during pain episodes?"
-        ];
-        recPsych = true;
-        recReason = "Pain syndrome indicates correlation for anxiety/stress assessment.";
-      } else if (complaintLower.includes('tired') || complaintLower.includes('fatigue') || complaintLower.includes('stress') || complaintLower.includes('sleep')) {
-        qList = [
-          "How many hours of restful sleep do you average per night?",
-          "Have you noticed changes in mood, concentration, or daily motivation?",
-          "Are you experiencing physical fatigue alongside emotional exhaustion?"
-        ];
-        recPsych = true;
-        recReason = "Psychiatric screening (PHQ-9 / GAD-7) recommended due to reported fatigue & stress.";
-      } else {
-        recPsych = true;
-        recReason = "Recommended for holistic multi-system baseline correlation.";
-      }
-
-      setAdaptiveQuestions(qList);
-      setPsychiatricRecommended(recPsych);
-      setPsychiatricReason(recReason);
-    } catch (err) {
-      console.error("Adaptive AI generation error:", err);
-      setAdaptiveQuestions([
-        "Have you experienced any abdominal discomfort, nausea, or appetite changes?",
-        "Are you currently experiencing joint pain, fatigue, or muscle weakness?",
-        "Do you have a personal or family history of similar symptoms?"
-      ]);
-      setPsychiatricRecommended(true);
-      setPsychiatricReason("Indicated for clinical correlation due to reported systemic symptoms.");
-    } finally {
-      setIsGeneratingAdaptive(false);
-    }
-  };
 
   const bmi = useMemo(() => {
     if (heightCm && weightKg) {
