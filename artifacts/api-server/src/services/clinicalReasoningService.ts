@@ -228,13 +228,14 @@ FULL MEDICAL DOCUMENT CONTEXT:
 ${contextSummary}
 
 INSTRUCTIONS:
-1. Analyze ALL findings together holistically - do not treat labs in isolation
-2. For EVERY abnormal parameter, provide complete details (causes, symptoms, complications, follow-up)
-3. Generate a clinicalConclusion that reads like a consultant's summary letter
-4. Assign riskAssessment based on the overall clinical picture
-5. List nextSteps as specific, actionable recommendations
-6. Cite document source and exact value for each finding
-7. Never state AI-generated possibilities as confirmed diagnoses`;
+1. Analyze ALL findings, patient intake data, and adaptive Q&A responses together holistically.
+2. IMPORTANT FOR DIRECT INTAKE / ADAPTIVE AI CASES (WITHOUT LAB DOCS): If no lab parameters are provided, perform full clinical reasoning on the chief complaint, reported symptoms, medical history, and Adaptive AI Q&A answers. Generate structured clinical findings for each key symptom or clinical presentation (e.g. "Persistent febrile illness with GI involvement", "Acute tension/vascular headache pattern"). NEVER return empty findings or an empty report!
+3. FOR HANDWRITTEN DOCTOR PRESCRIPTIONS & CAMERA SCANS: Interpret common medical abbreviations (OD, BD, TID, QID, SOS, HS, PO, IV) and handwritten doctor notes. Extract all prescribed items accurately.
+4. For EVERY abnormal parameter or key clinical finding, provide complete details (whatItMeasures, whyImportant, clinicalInterpretation, possibleCauses, associatedSymptoms, potentialComplications, followUpInvestigations).
+5. Generate a clinicalConclusion that reads like a consultant physician's summary letter.
+6. Assign riskAssessment (level & urgency) based on the overall clinical picture.
+7. List nextSteps as specific, actionable recommendations.
+8. Never state AI-generated possibilities as confirmed diagnoses.`;
 
   let retries = 0;
   let findings: ClinicalFinding[] = [];

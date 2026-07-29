@@ -11,6 +11,66 @@ const router = Router();
 
 const DISCLAIMER = "This is AI-generated decision support and not a clinical diagnosis. Always verify with a licensed physician.";
 
+function formatIntakeContext(intakeData: Record<string, unknown>): string {
+  const parts: string[] = [];
+  const type = (intakeData.analysisType as string) ?? "physical";
+  parts.push(`PATIENT INTAKE & CLINICAL ASSESSMENT (${type.toUpperCase()})`);
+  parts.push(`Patient Name: ${intakeData.patientName ?? "Patient"}`);
+  if (intakeData.age) parts.push(`Age: ${intakeData.age} years`);
+  if (intakeData.biologicalSex) parts.push(`Biological Sex: ${intakeData.biologicalSex}`);
+  if (intakeData.heightCm && intakeData.weightKg) {
+    const h = (intakeData.heightCm as number) / 100;
+    const w = intakeData.weightKg as number;
+    const bmi = (w / (h * h)).toFixed(1);
+    parts.push(`Height: ${intakeData.heightCm}cm | Weight: ${intakeData.weightKg}kg | BMI: ${bmi}`);
+  }
+  if (intakeData.chiefComplaint) parts.push(`Chief Complaint: ${intakeData.chiefComplaint}`);
+  if (intakeData.symptomDuration) parts.push(`Symptom Duration: ${intakeData.symptomDuration}`);
+  if (Array.isArray(intakeData.knownDiagnoses) && intakeData.knownDiagnoses.length > 0) {
+    parts.push(`Known Diagnoses: ${intakeData.knownDiagnoses.join(", ")}`);
+  }
+  if (intakeData.currentMedications) parts.push(`Current Medications: ${intakeData.currentMedications}`);
+  if (intakeData.knownAllergies) parts.push(`Known Allergies: ${intakeData.knownAllergies}`);
+  if (intakeData.recentSurgeries) {
+    parts.push(`Recent Surgeries: Yes - ${intakeData.recentSurgeriesDetails || "Details not specified"}`);
+  }
+  if (Array.isArray(intakeData.familyHistory) && intakeData.familyHistory.length > 0) {
+    parts.push(`Family History: ${intakeData.familyHistory.join(", ")}`);
+  }
+  if (intakeData.smoking) parts.push(`Smoking History: ${intakeData.smoking}`);
+  if (intakeData.alcohol) parts.push(`Alcohol Consumption: ${intakeData.alcohol}`);
+
+  // Adaptive AI Q&A formatting
+  const adaptiveQA = intakeData.adaptiveQA as Array<{ question: string; answer: string }> | undefined;
+  if (Array.isArray(adaptiveQA) && adaptiveQA.length > 0) {
+    parts.push("\nADAPTIVE AI CASE SCREENING QUESTIONS & PATIENT RESPONSES:");
+    adaptiveQA.forEach((qa, idx) => {
+      parts.push(`Q${idx + 1}: ${qa.question}`);
+      parts.push(`Patient Answer: ${qa.answer || "No response provided"}`);
+    });
+  }
+
+  // Psychiatric screening answers
+  if (Array.isArray(intakeData.phq9Answers)) {
+    const phq9 = (intakeData.phq9Answers as number[]).reduce((a, b) => a + (b > -1 ? b : 0), 0);
+    parts.push(`PHQ-9 Depression Scale Score: ${phq9}/27`);
+  }
+  if (Array.isArray(intakeData.gad7Answers)) {
+    const gad7 = (intakeData.gad7Answers as number[]).reduce((a, b) => a + (b > -1 ? b : 0), 0);
+    parts.push(`GAD-7 Anxiety Scale Score: ${gad7}/21`);
+  }
+  if (intakeData.sleepQuality) parts.push(`Sleep Quality Rating: ${intakeData.sleepQuality}/10`);
+  if (intakeData.appetiteChanges) parts.push(`Appetite Changes: ${intakeData.appetiteChanges}`);
+  if (intakeData.lifeStressors) {
+    parts.push(`Significant Life Stressors: Yes - ${intakeData.lifeStressorsDetails || "Details not specified"}`);
+  }
+  if (intakeData.previousMentalHealthDiagnosis) {
+    parts.push(`Previous Mental Health History: Yes - ${intakeData.mentalHealthDiagnosisDetails || "Details not specified"}`);
+  }
+
+  return parts.join("\n");
+}
+
 // POST /api/analyze
 router.post("/analyze", async (req: Request, res: Response) => {
   try {
@@ -23,14 +83,17 @@ router.post("/analyze", async (req: Request, res: Response) => {
     if (!jobId) { res.status(400).json({ error: "jobId is required" }); return; }
     if (!intakeData) { res.status(400).json({ error: "intakeData is required" }); return; }
 
+    const formattedIntake = formatIntakeContext(intakeData);
     let job = getJob(jobId);
+
     if (!job) {
-      const intakeContext = `Direct Intake Assessment (${intakeData.analysisType ?? 'physical'}). Patient Name: ${intakeData.patientName ?? 'Patient'}, Chief Complaint: ${intakeData.chiefComplaint ?? 'General Clinical Assessment'}, Age: ${intakeData.age ?? 'Not specified'}, Sex: ${intakeData.biologicalSex ?? 'Not specified'}.`;
       job = createJob(jobId, []);
-      updateJob(jobId, { medicalContext: intakeContext, intakeData });
-    } else if (!job.medicalContext) {
-      const intakeContext = `Direct Intake Assessment (${intakeData.analysisType ?? 'physical'}). Patient Name: ${intakeData.patientName ?? 'Patient'}, Chief Complaint: ${intakeData.chiefComplaint ?? 'General Clinical Assessment'}, Age: ${intakeData.age ?? 'Not specified'}, Sex: ${intakeData.biologicalSex ?? 'Not specified'}.`;
-      updateJob(jobId, { medicalContext: intakeContext });
+      updateJob(jobId, { medicalContext: formattedIntake, intakeData });
+    } else {
+      const combinedContext = job.medicalContext && !job.medicalContext.startsWith("PATIENT INTAKE")
+        ? `${job.medicalContext}\n\n====================\n${formattedIntake}`
+        : formattedIntake;
+      updateJob(jobId, { medicalContext: combinedContext, intakeData });
       job = getJob(jobId)!;
     }
 
