@@ -28,7 +28,7 @@ export default function Intake() {
   const [chiefComplaint, setChiefComplaint] = useState('');
   const [symptomDuration, setSymptomDuration] = useState('days');
   const [age, setAge] = useState('');
-  const [biologicalSex, setBiologicalSex] = useState('Female');
+  const [biologicalSex, setBiologicalSex] = useState('');
   const [heightCm, setHeightCm] = useState('');
   const [weightKg, setWeightKg] = useState('');
   
@@ -252,8 +252,9 @@ export default function Intake() {
                       onChange={e => setBiologicalSex(e.target.value)}
                       className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#16A34A]"
                     >
-                      <option value="Female">Female</option>
+                      <option value="">Select Sex</option>
                       <option value="Male">Male</option>
+                      <option value="Female">Female</option>
                       <option value="Other">Other</option>
                     </select>
                   </div>
