@@ -87,7 +87,60 @@ function parseJsonFromText(text: string): Record<string, unknown> {
   if (firstBrace !== -1 && lastBrace > firstBrace) {
     cleaned = cleaned.slice(firstBrace, lastBrace + 1);
   }
-  return JSON.parse(cleaned);
+
+  try {
+    return JSON.parse(cleaned);
+  } catch (err) {
+    logger.warn({ err }, "Standard JSON.parse failed on AI response, trying truncated JSON recovery");
+
+    // Attempt 1: Try closing open brackets/braces for truncated JSON
+    try {
+      let repaired = cleaned;
+      if (!repaired.endsWith("}")) repaired += "}";
+      if (!repaired.includes("]}")) repaired = repaired.replace(/,?\s*$/, "]}");
+      return JSON.parse(repaired);
+    } catch {
+      /* Fallback to regex object extraction below */
+    }
+
+    // Attempt 2: Extract individual lab parameter JSON objects from text via regex
+    const labs: LabParameter[] = [];
+    const prescriptions: PrescriptionItem[] = [];
+
+    const labMatches = text.matchAll(/\{\s*"name"\s*:\s*"([^"]+)"\s*,\s*"value"\s*:\s*"([^"]*)"(?:[^\}]*?"unit"\s*:\s*(?:"([^"]*)"|null))?(?:[^\}]*?"referenceRange"\s*:\s*(?:"([^"]*)"|null))?(?:[^\}]*?"status"\s*:\s*"([^"]*)")?(?:[^\}]*?"panel"\s*:\s*(?:"([^"]*)"|null))?[^\}]*?\}/g);
+    for (const match of labMatches) {
+      if (match[1] && match[2]) {
+        labs.push({
+          name: match[1],
+          value: match[2],
+          unit: match[3] || null,
+          referenceRange: match[4] || null,
+          status: (match[5] as any) || "normal",
+          interpretation: null,
+          panel: match[6] || "Other",
+        });
+      }
+    }
+
+    const medMatches = text.matchAll(/\{\s*"medicineName"\s*:\s*"([^"]+)"(?:[^\}]*?"dosage"\s*:\s*(?:"([^"]*)"|null))?(?:[^\}]*?"frequency"\s*:\s*(?:"([^"]*)"|null))?[^\}]*?\}/g);
+    for (const match of medMatches) {
+      if (match[1]) {
+        prescriptions.push({
+          medicineName: match[1],
+          brandName: null,
+          genericName: match[1],
+          dosage: match[2] || "As prescribed",
+          frequency: match[3] || "As directed",
+          duration: "As advised",
+          timing: "As advised",
+          route: "Oral",
+          specialInstructions: "Take as prescribed",
+        });
+      }
+    }
+
+    return { labParameters: labs, prescriptions };
+  }
 }
 
 function extractLabsRegex(text: string): LabParameter[] {

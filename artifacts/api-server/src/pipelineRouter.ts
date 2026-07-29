@@ -210,7 +210,7 @@ async function callProvider(
                 { role: "user", content: userContent as string },
               ]),
               temperature: jsonMode ? 0.1 : 0.3,
-              max_tokens: 4096,
+              max_tokens: 8192,
             }),
           }),
           TIMEOUT_MS
