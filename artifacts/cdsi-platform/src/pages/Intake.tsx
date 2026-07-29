@@ -381,7 +381,6 @@ export default function Intake() {
                 </div>
               </div>
             </div>
-          )}
 
           {/* Psychiatric Block */}
           {(analysisType === 'psychiatric' || analysisType === 'both') && (
@@ -538,7 +537,6 @@ export default function Intake() {
             </div>
           )}
         </div>
-      )}
 
       {/* Sticky Footer */}
       <div className="fixed bottom-0 left-0 right-0 md:left-[240px] bg-white/80 backdrop-blur-md border-t border-[#E5E7EB] p-4 flex justify-center z-40">
