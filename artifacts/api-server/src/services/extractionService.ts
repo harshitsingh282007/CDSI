@@ -130,6 +130,16 @@ function extractLabsRegex(text: string): LabParameter[] {
     { name: "Prothrombin Time (PT)", regex: /(?:pt \(prothrombin time\)|prothrombin time)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Coagulation", unit: "sec", normalMin: 12, normalMax: 14 },
     { name: "INR", regex: /inr[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Coagulation", unit: "", normalMin: 0.8, normalMax: 1.1 },
     { name: "aPTT", regex: /aptt[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Coagulation", unit: "sec", normalMin: 25, normalMax: 35 },
+
+    // Vitamins, Thyroid & Electrolytes
+    { name: "Vitamin D (25 Hydroxy)", regex: /(?:vitamin d|25 hydroxy|vit d)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Vitamins", unit: "ng/mL", normalMin: 30, normalMax: 100 },
+    { name: "Vitamin B12", regex: /(?:vitamin b12|vit b12|b12)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Vitamins", unit: "pg/mL", normalMin: 200, normalMax: 1100 },
+    { name: "TSH (Thyroid Stimulating Hormone)", regex: /(?:tsh|thyroid stimulating hormone)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Thyroid", unit: "uIU/mL", normalMin: 0.7, normalMax: 6.4 },
+    { name: "Serum Calcium", regex: /(?:calcium|serum calcium)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Electrolytes", unit: "mg/dL", normalMin: 8.4, normalMax: 10.2 },
+    { name: "Serum Uric Acid", regex: /(?:uric acid|serum uric acid)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "KFT", unit: "mg/dL", normalMin: 3.5, normalMax: 8.5 },
+    { name: "Serum Sodium", regex: /(?:sodium|serum sodium)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Electrolytes", unit: "mmol/L", normalMin: 135, normalMax: 155 },
+    { name: "Serum Potassium", regex: /(?:potassium|serum potassium)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Electrolytes", unit: "mmol/L", normalMin: 3.5, normalMax: 5.5 },
+    { name: "Serum Chloride", regex: /(?:chloride|serum chloride)[\s:]*([0-9]+(?:\.[0-9]+)?)/i, panel: "Electrolytes", unit: "mmol/L", normalMin: 97, normalMax: 111 },
   ];
 
   for (const item of patterns) {
@@ -169,6 +179,14 @@ function extractPrescriptionsRegex(text: string): PrescriptionItem[] {
     { name: "ORS Solution", dose: "Ad-lib", route: "Oral", freq: "Frequent sips", dur: "Ongoing" },
     { name: "Cefixime", dose: "400mg", route: "Oral", freq: "TID", dur: "7-10 days" },
     { name: "Levofloxacin", dose: "500mg", route: "Oral", freq: "OD", dur: "7-10 days" },
+    { name: "Risebok", dose: "As directed", route: "Oral", freq: "OD", dur: "7-30 days" },
+    { name: "Lemcal D3", dose: "60k IU / 500mg", route: "Oral", freq: "Once weekly / OD", dur: "1-3 months" },
+    { name: "Combiflam", dose: "500mg", route: "Oral", freq: "SOS / BD", dur: "3-5 days" },
+    { name: "Niftran", dose: "100mg", route: "Oral", freq: "BD", dur: "5-7 days" },
+    { name: "Rob DSR", dose: "30mg/20mg", route: "Oral", freq: "OD (Before Food)", dur: "7-14 days" },
+    { name: "Aptimax", dose: "Syrup / Tab", route: "Oral", freq: "BD", dur: "1 month" },
+    { name: "Electral", dose: "4.4g / sachet", route: "Oral", freq: "In 1L Water", dur: "3-5 days" },
+    { name: "B-Complex", dose: "1 Tab", route: "Oral", freq: "OD / Bedtime", dur: "1 month" },
   ];
 
   for (const m of meds) {

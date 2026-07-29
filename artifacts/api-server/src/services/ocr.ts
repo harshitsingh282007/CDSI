@@ -99,8 +99,62 @@ async function extractPdfText(filePath: string, fileName: string): Promise<OcrRe
   }
 }
 
+function extractImagesFromPdfBuffer(buffer: Buffer): Buffer[] {
+  const images: Buffer[] = [];
+  let offset = 0;
+
+  while (offset < buffer.length) {
+    const soi = buffer.indexOf(Buffer.from([0xff, 0xd8, 0xff]), offset);
+    if (soi === -1) break;
+
+    const eoi = buffer.indexOf(Buffer.from([0xff, 0xd9]), soi + 3);
+    if (eoi === -1) break;
+
+    const imgBuffer = buffer.subarray(soi, eoi + 2);
+    // Ignore small thumbnails (must be > 5KB)
+    if (imgBuffer.length > 5000) {
+      images.push(imgBuffer);
+    }
+    offset = eoi + 2;
+  }
+
+  return images;
+}
+
 // OCR scanned PDF pages
 async function ocrPdfPages(filePath: string, fileName: string, pageCount: number): Promise<OcrResult> {
+  // 1. Pure JS embedded image extraction (Works on Render without Ghostscript / pdf2pic!)
+  try {
+    const buffer = fs.readFileSync(filePath);
+    const embeddedImages = extractImagesFromPdfBuffer(buffer);
+    if (embeddedImages.length > 0) {
+      logger.info({ count: embeddedImages.length, fileName }, "Extracted embedded page images from scanned PDF via pure JS");
+      let fullText = "";
+      const Tesseract = await import("tesseract.js");
+      const worker = await Tesseract.createWorker("eng");
+
+      for (let i = 0; i < embeddedImages.length; i++) {
+        try {
+          const imgBuf = embeddedImages[i];
+          const { data } = await worker.recognize(imgBuf);
+          if (data.text.trim().length > 0) {
+            fullText += `[DOC: ${fileName} | PAGE: ${i + 1}]\n${data.text}\n\n`;
+          }
+        } catch (e) {
+          logger.warn({ e, page: i + 1, fileName }, "Embedded page image OCR failed");
+        }
+      }
+      await worker.terminate();
+
+      if (fullText.trim().length > 30) {
+        return { text: fullText, pageCount: Math.max(embeddedImages.length, pageCount), docAnnotation: `[DOC: ${fileName}]` };
+      }
+    }
+  } catch (err) {
+    logger.warn({ err, fileName }, "Pure JS PDF embedded image extraction failed");
+  }
+
+  // 2. Fallback: pdf2pic if native binaries exist
   try {
     const { fromPath } = await import("pdf2pic");
     const convert = fromPath(filePath, {
