@@ -428,7 +428,7 @@ export async function extractStructuredData(
   let patientAge: number | null = null;
   let patientSex: string | null = null;
 
-  // Layer 1: Instant high-speed baseline text extraction
+  // Layer 1: Instant regex baseline extraction
   if (medicalContext.trim()) {
     allLabs.push(...extractLabsRegex(medicalContext));
     allPrescriptions.push(...extractGenericPrescriptions(medicalContext));
@@ -436,71 +436,20 @@ export async function extractStructuredData(
     allPrescriptions.push(...extractPrescriptionsRegex(medicalContext));
   }
 
-  const dedupedLabs = deduplicateLabs(allLabs);
-  const dedupedPrescriptions = deduplicatePrescriptions(allPrescriptions);
   const patientInfo = extractPatientInfo(medicalContext);
 
-  // The AI Vision extraction will now run on all documents to ensure no labs are missed.
+  // Layer 2: AI extraction — send the FULL document text in ONE call
+  // This is the primary extraction method. The regex above is just a safety net.
+  const fullText = medicalContext.trim();
+  if (fullText.length > 50) {
+    logger.info({ textLength: fullText.length, baselineRegexLabs: allLabs.length }, "Running primary AI extraction on full document text");
 
-  const imagesList = pageImages ?? [];
-  const textsList = (pageTexts && pageTexts.length > 0) ? pageTexts : splitTextIntoPages(medicalContext);
-  const totalPages = Math.min(Math.max(imagesList.length, textsList.length), 8); // Process up to 8 pages
-
-  logger.info({ totalPages, imageCount: imagesList.length, textPageCount: textsList.length, baselineLabs: allLabs.length }, "Executing AI extraction on document pages");
-
-  if (totalPages > 0) {
-    for (let p = 0; p < totalPages; p++) {
-      const imgBuf = imagesList[p];
-      const textChunk = textsList[p] ?? "";
-
-      const prompt = `PAGE ${p + 1} OF ${totalPages} - EXHAUSTIVE MEDICAL DATA EXTRACTION.
-Analyze Page ${p + 1} of the patient's medical record. Extract ALL lab parameters and prescriptions. Return strictly valid JSON.
-
---- DOCUMENT TEXT ---
-${textChunk || medicalContext.slice(0, 6000)}
----------------------`;
-
-      try {
-        const response = await callAI("entity_extract", prompt, LAB_SYSTEM_PROMPT, {
-          language,
-          jsonMode: true,
-          images: imgBuf ? [imgBuf] : undefined,
-        });
-
-        if (response.content) {
-          const parsed = parseJsonFromText(response.content) as {
-            labParameters?: LabParameter[];
-            prescriptions?: PrescriptionItem[];
-            patientName?: string | null;
-            patientAge?: number | null;
-            patientSex?: string | null;
-          };
-          if (parsed.labParameters?.length) allLabs.push(...parsed.labParameters);
-          if (parsed.prescriptions?.length) allPrescriptions.push(...parsed.prescriptions);
-          if (!patientName && parsed.patientName) patientName = parsed.patientName;
-          if (!patientAge && parsed.patientAge) patientAge = parsed.patientAge;
-          if (!patientSex && parsed.patientSex) patientSex = parsed.patientSex;
-        }
-      } catch (err) {
-        logger.warn({ err, page: p + 1 }, "Page-by-page AI extraction error");
-      }
-
-      if (textChunk) {
-        allLabs.push(...extractLabsRegex(textChunk));
-        allPrescriptions.push(...extractGenericPrescriptions(textChunk));
-        allPrescriptions.push(...extractIndianPrescriptions(textChunk));
-        allPrescriptions.push(...extractPrescriptionsRegex(textChunk));
-      }
-    }
-  } else {
-    // Fallback: no page splitting worked, send the full text as one AI call
-    logger.info("No pages detected, sending full medicalContext to AI for extraction");
     const prompt = `EXHAUSTIVE MEDICAL DATA EXTRACTION.
-Analyze the patient's complete medical record below. Extract ALL lab parameters and ALL prescriptions. Return strictly valid JSON.
+You are given a patient's complete medical document text below. Extract EVERY SINGLE lab parameter and EVERY SINGLE prescription from this document. Do not miss any test or medication. Return strictly valid JSON.
 
---- DOCUMENT TEXT ---
-${medicalContext.slice(0, 12000)}
----------------------`;
+--- FULL DOCUMENT TEXT ---
+${fullText.slice(0, 15000)}
+--- END DOCUMENT TEXT ---`;
 
     try {
       const response = await callAI("entity_extract", prompt, LAB_SYSTEM_PROMPT, {
@@ -509,6 +458,7 @@ ${medicalContext.slice(0, 12000)}
       });
 
       if (response.content) {
+        logger.info({ responseLength: response.content.length }, "AI extraction response received");
         const parsed = parseJsonFromText(response.content) as {
           labParameters?: LabParameter[];
           prescriptions?: PrescriptionItem[];
@@ -516,20 +466,64 @@ ${medicalContext.slice(0, 12000)}
           patientAge?: number | null;
           patientSex?: string | null;
         };
-        if (parsed.labParameters?.length) allLabs.push(...parsed.labParameters);
-        if (parsed.prescriptions?.length) allPrescriptions.push(...parsed.prescriptions);
+        if (parsed.labParameters?.length) {
+          logger.info({ aiLabCount: parsed.labParameters.length }, "AI extracted lab parameters");
+          allLabs.push(...parsed.labParameters);
+        }
+        if (parsed.prescriptions?.length) {
+          logger.info({ aiMedCount: parsed.prescriptions.length }, "AI extracted prescriptions");
+          allPrescriptions.push(...parsed.prescriptions);
+        }
         if (!patientName && parsed.patientName) patientName = parsed.patientName;
         if (!patientAge && parsed.patientAge) patientAge = parsed.patientAge;
         if (!patientSex && parsed.patientSex) patientSex = parsed.patientSex;
+      } else {
+        logger.warn("AI extraction returned empty content");
+        errors.push("AI extraction returned empty response");
       }
     } catch (err) {
-      logger.warn({ err }, "Full-context AI extraction error");
+      logger.error({ err }, "AI extraction call failed");
+      errors.push(`AI extraction failed: ${err instanceof Error ? err.message : "unknown error"}`);
     }
   }
 
+  // Layer 3: If we have page images, also try vision extraction on images
+  const imagesList = pageImages ?? [];
+  if (imagesList.length > 0) {
+    logger.info({ imageCount: imagesList.length }, "Running vision extraction on page images");
+    for (let p = 0; p < Math.min(imagesList.length, 6); p++) {
+      const imgBuf = imagesList[p];
+      if (!imgBuf) continue;
+
+      try {
+        const response = await callAI("entity_extract",
+          `Extract ALL lab parameters and prescriptions from this medical document page image. Return strictly valid JSON.`,
+          LAB_SYSTEM_PROMPT,
+          { language, jsonMode: true, images: [imgBuf] }
+        );
+
+        if (response.content) {
+          const parsed = parseJsonFromText(response.content) as {
+            labParameters?: LabParameter[];
+            prescriptions?: PrescriptionItem[];
+          };
+          if (parsed.labParameters?.length) allLabs.push(...parsed.labParameters);
+          if (parsed.prescriptions?.length) allPrescriptions.push(...parsed.prescriptions);
+        }
+      } catch (err) {
+        logger.warn({ err, page: p + 1 }, "Vision extraction error");
+      }
+    }
+  }
+
+  const finalLabs = deduplicateLabs(allLabs);
+  const finalPrescriptions = deduplicatePrescriptions(allPrescriptions);
+
+  logger.info({ finalLabCount: finalLabs.length, finalMedCount: finalPrescriptions.length, errors: errors.length }, "Extraction complete");
+
   return {
-    labParameters: deduplicateLabs(allLabs),
-    prescriptions: deduplicatePrescriptions(allPrescriptions),
+    labParameters: finalLabs,
+    prescriptions: finalPrescriptions,
     patientName: patientName || patientInfo.name,
     patientAge: patientAge || patientInfo.age,
     patientSex: patientSex || patientInfo.sex,
