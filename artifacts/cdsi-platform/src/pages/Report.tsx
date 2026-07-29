@@ -389,6 +389,9 @@ export default function Report() {
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
   const [labSearch, setLabSearch] = useState('');
   const [showAllSystems, setShowAllSystems] = useState(false);
+  const [showAllFindings, setShowAllFindings] = useState(false);
+  const [showAllDifferentials, setShowAllDifferentials] = useState(false);
+  const [showAllConditions, setShowAllConditions] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -689,88 +692,203 @@ export default function Report() {
       )}
 
       {/* ── Possible Conditions ── */}
-      {report.possibleConditions && report.possibleConditions.length > 0 && (
-        <div className="flex flex-col gap-3">
-          <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-            <ClipboardList className="w-5 h-5 text-gray-500" />{t('possibleConditions', language)}
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {report.possibleConditions.map((cond, i) => (
-              <span key={i} className="px-3 py-1.5 bg-white border border-gray-200 rounded-full text-sm font-medium text-gray-700 shadow-sm">
-                {cond}
-              </span>
-            ))}
-          </div>
-          <p className="text-xs text-gray-400 italic">These are AI-generated possibilities, not confirmed diagnoses. Clinical evaluation is required.</p>
-        </div>
-      )}
-
-      {/* ── Organ System Cards ── */}
-      {report.organSystems.length > 0 && (() => {
-        const knownSystems = report.organSystems.filter(sys => sys.status !== 'unknown');
-        const unknownSystems = report.organSystems.filter(sys => sys.status === 'unknown');
-        const displayedSystems = showAllSystems ? report.organSystems : (knownSystems.length > 0 ? knownSystems : report.organSystems);
+      {report.possibleConditions && report.possibleConditions.length > 0 && (() => {
+        const visibleConditions = showAllConditions ? report.possibleConditions : report.possibleConditions.slice(0, 4);
+        const hasMore = report.possibleConditions.length > 4;
 
         return (
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-gray-500" />{t('possibleConditions', language)}
+              </h2>
+
+              {hasMore && (
+                <button
+                  onClick={() => setShowAllConditions(!showAllConditions)}
+                  className="flex items-center gap-1.5 text-xs text-gray-700 hover:text-gray-900 font-semibold transition-colors border border-gray-200 bg-gray-50 px-2.5 py-1 rounded-lg cursor-pointer"
+                >
+                  <span>{showAllConditions ? 'Show Top 4' : `View All (${report.possibleConditions.length})`}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showAllConditions ? 'rotate-180' : ''}`} />
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {visibleConditions.map((cond, i) => (
+                <span key={i} className="px-3 py-1.5 bg-white border border-gray-200 rounded-full text-sm font-medium text-gray-700 shadow-sm">
+                  {cond}
+                </span>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 italic">These are AI-generated possibilities, not confirmed diagnoses. Clinical evaluation is required.</p>
+          </div>
+        );
+      })()}
+
+      {/* ── Organ System Cards (Split Columns: Abnormal Left | Critical Right) ── */}
+      {report.organSystems.length > 0 && (() => {
+        const criticalSystems = report.organSystems.filter(sys => sys.status === 'critical');
+        const abnormalSystems = report.organSystems.filter(sys => sys.status === 'abnormal' || sys.status === 'warning');
+        const normalSystems = report.organSystems.filter(sys => sys.status === 'normal');
+        const unknownSystems = report.organSystems.filter(sys => sys.status === 'unknown');
+
+        return (
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
                 <Activity className="w-5 h-5 text-gray-500" />{t('organSystems', language)}
                 <span className="text-xs font-normal text-gray-500">
-                  ({knownSystems.length} assessed{unknownSystems.length > 0 ? `, ${unknownSystems.length} unassessed` : ''})
+                  ({criticalSystems.length} Critical, {abnormalSystems.length} Abnormal, {normalSystems.length} Normal)
                 </span>
               </h2>
 
-              {unknownSystems.length > 0 && (
+              {(normalSystems.length > 0 || unknownSystems.length > 0) && (
                 <button 
                   onClick={() => setShowAllSystems(!showAllSystems)}
                   className="flex items-center gap-1.5 text-xs text-emerald-700 hover:text-emerald-800 font-semibold transition-colors border border-emerald-200 bg-emerald-50 px-2.5 py-1 rounded-lg cursor-pointer"
                 >
-                  <span>{showAllSystems ? 'Hide Unassessed Systems' : `View All (${report.organSystems.length})`}</span>
+                  <span>{showAllSystems ? 'Hide Normal/Unassessed' : `View All Systems (${report.organSystems.length})`}</span>
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showAllSystems ? 'rotate-180' : ''}`} />
                 </button>
               )}
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {displayedSystems.map(sys => (
-                <div key={sys.system} className={`p-4 rounded-xl border flex flex-col gap-2 ${getStatusCardBg(sys.status)} shadow-sm transition-all`}>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-gray-800 text-sm">{sys.system}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold uppercase border ${getStatusBadge(sys.status)}`}>{sys.status}</span>
-                  </div>
-                  {sys.summary && <p className="text-xs text-gray-600 leading-relaxed">{sys.summary}</p>}
+            {/* Side-by-Side Columns */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Left Column: Abnormal / Warning Systems */}
+              <div className="flex flex-col gap-2.5 p-4 bg-amber-50/50 border border-amber-200/80 rounded-2xl">
+                <div className="flex items-center justify-between pb-2 border-b border-amber-200/60">
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 text-amber-600" /> Abnormal / Warning Systems
+                  </span>
+                  <span className="px-2 py-0.5 bg-amber-200/80 text-amber-900 text-xs font-bold rounded-full">
+                    {abnormalSystems.length}
+                  </span>
                 </div>
-              ))}
+                {abnormalSystems.length === 0 ? (
+                  <p className="text-xs text-amber-700/70 italic py-2">No abnormal organ systems flagged.</p>
+                ) : (
+                  abnormalSystems.map(sys => (
+                    <div key={sys.system} className={`p-3 rounded-xl border flex flex-col gap-1.5 ${getStatusCardBg(sys.status)} shadow-sm`}>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-gray-800 text-sm">{sys.system}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase border ${getStatusBadge(sys.status)}`}>{sys.status}</span>
+                      </div>
+                      {sys.summary && <p className="text-xs text-gray-600 leading-relaxed">{sys.summary}</p>}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Right Column: Critical Systems */}
+              <div className="flex flex-col gap-2.5 p-4 bg-rose-50/50 border border-rose-200/80 rounded-2xl">
+                <div className="flex items-center justify-between pb-2 border-b border-rose-200/60">
+                  <span className="text-xs font-bold uppercase tracking-wider text-rose-800 flex items-center gap-1.5">
+                    <AlertCircle className="w-4 h-4 text-rose-600" /> Critical Systems
+                  </span>
+                  <span className="px-2 py-0.5 bg-rose-200/80 text-rose-900 text-xs font-bold rounded-full">
+                    {criticalSystems.length}
+                  </span>
+                </div>
+                {criticalSystems.length === 0 ? (
+                  <p className="text-xs text-rose-700/70 italic py-2">No critical organ systems flagged.</p>
+                ) : (
+                  criticalSystems.map(sys => (
+                    <div key={sys.system} className={`p-3 rounded-xl border flex flex-col gap-1.5 ${getStatusCardBg(sys.status)} shadow-sm`}>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-gray-800 text-sm">{sys.system}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase border ${getStatusBadge(sys.status)}`}>{sys.status}</span>
+                      </div>
+                      {sys.summary && <p className="text-xs text-gray-600 leading-relaxed">{sys.summary}</p>}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Collapsible Normal & Unassessed Systems */}
+            {showAllSystems && (normalSystems.length > 0 || unknownSystems.length > 0) && (
+              <div className="mt-2 p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col gap-2.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Normal & Unassessed Systems</span>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+                  {[...normalSystems, ...unknownSystems].map(sys => (
+                    <div key={sys.system} className={`p-3 rounded-xl border flex flex-col gap-1 ${getStatusCardBg(sys.status)} shadow-sm`}>
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-gray-700 text-xs">{sys.system}</span>
+                        <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold uppercase border ${getStatusBadge(sys.status)}`}>{sys.status}</span>
+                      </div>
+                      {sys.summary && <p className="text-[11px] text-gray-500 leading-normal">{sys.summary}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* ── Confirmed Findings (With Toggle Switch) ── */}
+      {confirmedFindings.length > 0 && (() => {
+        const visibleFindings = showAllFindings ? confirmedFindings : confirmedFindings.slice(0, 3);
+        const hasMore = confirmedFindings.length > 3;
+
+        return (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                <HeartPulse className="w-5 h-5 text-emerald-600" />{t('confirmedFindings', language)}
+                <span className="text-xs font-normal text-gray-400">({confirmedFindings.length} findings)</span>
+              </h2>
+
+              {hasMore && (
+                <button
+                  onClick={() => setShowAllFindings(!showAllFindings)}
+                  className="flex items-center gap-1.5 text-xs text-emerald-700 hover:text-emerald-800 font-semibold transition-colors border border-emerald-200 bg-emerald-50 px-2.5 py-1 rounded-lg cursor-pointer"
+                >
+                  <span>{showAllFindings ? 'Show Top 3' : `View All (${confirmedFindings.length})`}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showAllFindings ? 'rotate-180' : ''}`} />
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              {visibleFindings.map((f, i) => <FindingCard key={i} finding={f} />)}
             </div>
           </div>
         );
       })()}
 
-      {/* ── Confirmed Findings ── */}
-      {confirmedFindings.length > 0 && (
-        <div className="flex flex-col gap-3">
-          <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-            <HeartPulse className="w-5 h-5 text-emerald-600" />{t('confirmedFindings', language)}
-            <span className="ml-auto text-xs font-normal text-gray-400">Click any finding to expand details</span>
-          </h2>
-          <div className="flex flex-col gap-2">
-            {confirmedFindings.map((f, i) => <FindingCard key={i} finding={f} />)}
-          </div>
-        </div>
-      )}
+      {/* ── Differentials (With Toggle Switch) ── */}
+      {possibleDifferentials.length > 0 && (() => {
+        const visibleDifferentials = showAllDifferentials ? possibleDifferentials : possibleDifferentials.slice(0, 3);
+        const hasMore = possibleDifferentials.length > 3;
 
-      {/* ── Differentials ── */}
-      {possibleDifferentials.length > 0 && (
-        <div className="flex flex-col gap-3">
-          <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-amber-500" />{t('possibleDifferentials', language)}
-          </h2>
-          <div className="flex flex-col gap-2">
-            {possibleDifferentials.map((f, i) => <FindingCard key={i} finding={f} />)}
+        return (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-amber-500" />{t('possibleDifferentials', language)}
+                <span className="text-xs font-normal text-gray-400">({possibleDifferentials.length} items)</span>
+              </h2>
+
+              {hasMore && (
+                <button
+                  onClick={() => setShowAllDifferentials(!showAllDifferentials)}
+                  className="flex items-center gap-1.5 text-xs text-amber-800 hover:text-amber-900 font-semibold transition-colors border border-amber-200 bg-amber-50 px-2.5 py-1 rounded-lg cursor-pointer"
+                >
+                  <span>{showAllDifferentials ? 'Show Top 3' : `View All (${possibleDifferentials.length})`}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showAllDifferentials ? 'rotate-180' : ''}`} />
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              {visibleDifferentials.map((f, i) => <FindingCard key={i} finding={f} />)}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Recommendations ── */}
       {recommendations.length > 0 && (
