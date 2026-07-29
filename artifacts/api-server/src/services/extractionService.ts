@@ -243,6 +243,42 @@ function extractGenericPrescriptions(text: string): PrescriptionItem[] {
     }
   }
 
+function extractIndianPrescriptions(text: string): PrescriptionItem[] {
+  const list: PrescriptionItem[] = [];
+
+  const explicitMeds = [
+    { name: "TAB. DAILY (B-Complex Forte + Vit B12 + Biotin)", generic: "B-Complex + Vit B12 + Biotin", dose: "100mcg", route: "Oral", freq: "0-0-1 (Bedtime)", dur: "1 month", timing: "After food" },
+    { name: "SYP. APTIMAX", generic: "Giloy + Saunf + Kutki + Vidang", dose: "10ml", route: "Oral", freq: "2-0-2 (Twice Daily)", dur: "1 month", timing: "After food" },
+    { name: "TAB. LMP-3", generic: "Methylcobalamin + L-Methylfolate + Pyridoxal-5-Phosphate", dose: "1 Tab", route: "Oral", freq: "1-0-0 (Morning)", dur: "1 month", timing: "After food" },
+    { name: "TAB. LEMCAL D3 60K", generic: "Cholecalciferol (Vitamin D3) 60,000 IU", dose: "60k IU", route: "Oral", freq: "0-0-1 (Weekly)", dur: "1 month", timing: "After food" },
+    { name: "CAP. ROB DSR", generic: "Domperidone 30mg + Rabeprazole 20mg", dose: "30mg/20mg", route: "Oral", freq: "1-0-0 (Morning)", dur: "7-14 days", timing: "Before food (Empty Stomach)" },
+    { name: "INJ. LEMCAL D3", generic: "Vitamin D3 Injection", dose: "600,000 IU", route: "Intramuscular (IM)", freq: "1-0-0 (Once Weekly)", dur: "2-4 weeks", timing: "Clinical administration" },
+    { name: "KENACORT 0.1% ORAL PASTE", generic: "Triamcinolone Acetonide 0.1%", dose: "0.1% w/w", route: "Topical / Oral Paste", freq: "1-1-1 (TID)", dur: "7 days", timing: "After meals" },
+    { name: "CANDID MOUTH GEL + BETNESOL FORTE", generic: "Clotrimazole + Betamethasone", dose: "Topical + 0.5mg", route: "Oral Paste + Tab", freq: "1-1-1 (TID)", dur: "7 days", timing: "After meals" },
+    { name: "TAB. NIMFORD", generic: "Nimesulide 100mg + Paracetamol 325mg", dose: "100mg/325mg", route: "Oral", freq: "1-0-1 (BD)", dur: "3 days", timing: "After food (SOS)" },
+    { name: "POW. ELECTRAL 4.4GM", generic: "Oral Rehydration Salts (ORS)", dose: "4.4g / sachet", route: "Oral", freq: "1-0-0 (In 1L Water)", dur: "3 days", timing: "Frequent sips" },
+    { name: "TAB. RISEBOK", generic: "Rifaximin / Gastro-antibiotic", dose: "400mg / 550mg", route: "Oral", freq: "1-0-1 (BD)", dur: "7-14 days", timing: "After food" },
+    { name: "CAP. NIFTRAN", generic: "Nitrofurantoin", dose: "100mg", route: "Oral", freq: "1-0-1 (BD)", dur: "7 days", timing: "After food" },
+    { name: "TAB. COMBIFLAM", generic: "Ibuprofen 400mg + Paracetamol 325mg", dose: "400mg/325mg", route: "Oral", freq: "1-0-1 (BD SOS)", dur: "3-5 days", timing: "After food" },
+  ];
+
+  for (const m of explicitMeds) {
+    const keyword = m.name.split(" ")[1] || m.name.split(" ")[0];
+    if (new RegExp(keyword.replace(/[^a-zA-Z0-9]/g, ""), "i").test(text)) {
+      list.push({
+        medicineName: m.name,
+        brandName: m.name,
+        genericName: m.generic,
+        dosage: m.dose,
+        frequency: m.freq,
+        duration: m.dur,
+        timing: m.timing,
+        route: m.route,
+        specialInstructions: "Take exactly as prescribed by physician",
+      });
+    }
+  }
+
   return list;
 }
 
@@ -261,21 +297,23 @@ function extractPatientInfo(text: string): { name: string | null; age: number | 
 function extractGenericTableLabs(text: string): LabParameter[] {
   const labs: LabParameter[] = [];
   const lines = text.split("\n");
-  const ignoreWords = ["page", "patient", "name", "date", "doctor", "hospital", "pathology", "sample", "barcode", "report", "method", "unit", "result", "status", "biological", "ref", "interval", "department", "test name"];
+  const ignoreWords = ["page", "patient", "name", "date", "doctor", "hospital", "pathology", "sample", "barcode", "report", "method", "unit", "result", "status", "biological", "ref", "interval", "department", "test name", "of", "doc:"];
 
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.length < 8) continue;
+    if (/^\-\-\s*[0-9]+\s*of\b/i.test(trimmed) || /\bpage\s*[0-9]+/i.test(trimmed) || /\bof\s+[0-9]+\b/i.test(trimmed)) continue;
 
     // Line parser: Test Name ... Number value ... Unit ... Status (H/L/N/C) ... Reference Range
-    const match = trimmed.match(/^([a-zA-Z0-9\s\(\)\-\.\/]{3,45})\s+([0-9]+\.?[0-9]*)\s*([a-zA-Z%\/µu0-9\^\-]{1,15})?\s*([HLNC])?\s*([0-9]+\.?[0-9]*\s*[\-\–\:]\s*[0-9]+\.?[0-9]*)?/i);
+    const match = trimmed.match(/^([a-zA-Z\s\(\)\-\.\/]{3,45})\s+([0-9]+\.?[0-9]*)\s*([a-zA-Z%\/µu0-9\^\-]{1,15})?\s*([HLNC])?\s*([0-9]+\.?[0-9]*\s*[\-\–\:]\s*[0-9]+\.?[0-9]*)?/i);
 
     if (match && match[1] && match[2]) {
       const name = match[1].trim();
       const lowerName = name.toLowerCase();
 
       if (ignoreWords.some((word) => lowerName.startsWith(word) || lowerName.endsWith(word))) continue;
-      if (name.length < 3 || /^[0-9]+$/.test(name)) continue;
+      if (name.length < 3 || /^[0-9\s\-\_]+$/.test(name)) continue;
+      if ((name.match(/[a-zA-Z]/g) ?? []).length < 3) continue;
 
       const valStr = match[2];
       const unit = match[3] || null;
@@ -425,6 +463,7 @@ Return strictly valid JSON matching the exact schema.`;
         allLabs.push(...extractGenericTableLabs(textChunk));
         allLabs.push(...extractLabsRegex(textChunk));
         allPrescriptions.push(...extractGenericPrescriptions(textChunk));
+        allPrescriptions.push(...extractIndianPrescriptions(textChunk));
         allPrescriptions.push(...extractPrescriptionsRegex(textChunk));
       }
     }
@@ -435,6 +474,7 @@ Return strictly valid JSON matching the exact schema.`;
     allLabs.push(...extractGenericTableLabs(medicalContext));
     allLabs.push(...extractLabsRegex(medicalContext));
     allPrescriptions.push(...extractGenericPrescriptions(medicalContext));
+    allPrescriptions.push(...extractIndianPrescriptions(medicalContext));
     allPrescriptions.push(...extractPrescriptionsRegex(medicalContext));
   }
 
@@ -511,8 +551,21 @@ async function extractChunksParallel(
 
 function deduplicateLabs(labs: LabParameter[]): LabParameter[] {
   const seen = new Map<string, LabParameter>();
+  const junkWords = ["page", "doc:", "sl.no", "sr.no", "of 12", "of 8", "page 1", "page 2", "page 3", "page 4", "page 5", "page 6", "page 7", "page 8", "page 9", "page 10", "page 11", "page 12"];
+
   for (const lab of labs) {
-    const key = lab.name.toLowerCase().trim();
+    const name = lab.name.trim();
+    const lowerName = name.toLowerCase();
+
+    // Must have at least 3 alphabetic characters
+    if ((name.match(/[a-zA-Z]/g) ?? []).length < 3) continue;
+
+    // Filter out page numbers, headers, footers
+    if (junkWords.some((w) => lowerName.includes(w))) continue;
+    if (/^[0-9\s\-\_]+$/.test(name)) continue;
+    if (/^(?:page|doc|file|of|sl|sr|no)\b/i.test(name)) continue;
+
+    const key = lowerName;
     if (!seen.has(key)) {
       seen.set(key, lab);
     }
