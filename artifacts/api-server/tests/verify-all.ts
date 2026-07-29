@@ -99,27 +99,7 @@ async function runTests() {
     assert(false, `Option 3 (Both) threw error: ${err}`);
   }
 
-  // Test 5: Option 4 - Adaptive AI Analysis
-  try {
-    const resAdaptive = await performClinicalReasoning(
-      medicalContext,
-      sampleLabs,
-      samplePrescriptions,
-      {
-        analysisType: "adaptive",
-        chiefComplaint: "Abdominal cramping and fatigue",
-        age: 30,
-        biologicalSex: "Male"
-      },
-      "English"
-    );
-    assert(Array.isArray(resAdaptive.findings), "Option 4 (Adaptive): Returns physical findings array");
-    assert(Array.isArray(resAdaptive.organSystems), "Option 4 (Adaptive): Returns organSystems array");
-  } catch (err) {
-    assert(false, `Option 4 (Adaptive) threw error: ${err}`);
-  }
-
-  // Test 6: PDF Generation Test
+  // Test 5: PDF Generation Test
   try {
     const mockReport = {
       jobId: "test-job-pdf",
@@ -129,7 +109,7 @@ async function runTests() {
         sex: "Male",
         bmi: 15.8,
         dateOfAnalysis: new Date().toISOString(),
-        analysisType: "adaptive"
+        analysisType: "physical"
       },
       labParameters: sampleLabs,
       prescriptions: samplePrescriptions,

@@ -258,99 +258,16 @@ export default function Intake() {
         </div>
       )}
 
-      {/* Standard Analysis Type */}
-      <div className="flex flex-col gap-4">
-        <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Standard Analysis Type</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button
-            type="button"
-            onClick={() => setAnalysisType('physical')}
-            className={`p-6 border rounded-xl flex flex-col items-center text-center gap-3 transition-all ${
-              analysisType === 'physical' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm ring-2 ring-[#16A34A]' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
-            }`}
-          >
-            <div className={`p-3 rounded-full ${analysisType === 'physical' ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280]'}`}>
-              <Stethoscope className="w-6 h-6" />
-            </div>
-            <div>
-              <span className={`font-semibold text-sm block ${analysisType === 'physical' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Physical Health</span>
-              <span className="text-xs text-gray-500 mt-1 block">Full physical lab & clinical diagnosis</span>
-            </div>
-          </button>
-          
-          <button
-            type="button"
-            onClick={() => setAnalysisType('psychiatric')}
-            className={`p-6 border rounded-xl flex flex-col items-center text-center gap-3 transition-all ${
-              analysisType === 'psychiatric' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm ring-2 ring-[#16A34A]' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
-            }`}
-          >
-            <div className={`p-3 rounded-full ${analysisType === 'psychiatric' ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280]'}`}>
-              <Brain className="w-6 h-6" />
-            </div>
-            <div>
-              <span className={`font-semibold text-sm block ${analysisType === 'psychiatric' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Psychiatric Health</span>
-              <span className="text-xs text-gray-500 mt-1 block">PHQ-9 & GAD-7 mental health evaluation</span>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setAnalysisType('both')}
-            className={`p-6 border rounded-xl flex flex-col items-center text-center gap-3 transition-all ${
-              analysisType === 'both' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm ring-2 ring-[#16A34A]' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
-            }`}
-          >
-            <div className={`p-3 rounded-full flex items-center justify-center w-12 h-12 ${analysisType === 'both' ? 'bg-[#DCFCE7]' : 'bg-[#FAFAFA]'}`}>
-              <span className="text-2xl leading-none">❤️</span>
-            </div>
-            <div>
-              <span className={`font-semibold text-sm block ${analysisType === 'both' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Physical + Psychiatric</span>
-              <span className="text-xs text-gray-500 mt-1 block">Combined multi-system clinical evaluation</span>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {/* Advanced Analysis Type (Dedicated Section) */}
-      <div className="flex flex-col gap-4 pt-2">
-        <h2 className="text-xs font-bold text-emerald-700 uppercase tracking-widest flex items-center gap-2">
-          Advanced Analysis Type
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button
-            type="button"
-            onClick={() => setAnalysisType('adaptive')}
-            className={`p-6 border rounded-xl flex flex-col items-center text-center justify-center gap-3 transition-all ${
-              analysisType === 'adaptive'
-                ? 'border-emerald-600 bg-[#F0FDF4] shadow-md ring-2 ring-emerald-600'
-                : 'border-emerald-200/80 bg-white hover:border-emerald-300 hover:bg-emerald-50/30'
-            }`}
-          >
-            <div className={`p-3 rounded-full flex items-center justify-center transition-transform ${
-              analysisType === 'adaptive' ? 'bg-emerald-600 text-white shadow-md' : 'bg-emerald-50 text-emerald-600 border border-emerald-200/80'
-            }`}>
-              <Activity className="w-6 h-6" />
-            </div>
-            <span className={`font-bold text-base ${analysisType === 'adaptive' ? 'text-emerald-700' : 'text-gray-900'}`}>
-              Adaptive AI Analysis
-            </span>
-          </button>
-        </div>
-      </div>
-
       {/* Forms */}
-      {analysisType && (
-        <div className="flex flex-col gap-10">
-          {/* Primary Demographics & Assessment Block */}
-          {analysisType && (
-            <div className="flex flex-col gap-8 bg-white p-8 rounded-xl border border-[#E5E7EB]">
-              <div className="flex items-center gap-3 border-b border-[#E5E7EB] pb-4">
-                <Stethoscope className="w-5 h-5 text-[#6B7280]" />
-                <h2 className="text-xl font-semibold text-[#111827]">
-                  {analysisType === 'adaptive' ? 'Adaptive AI Primary Intake' : analysisType === 'psychiatric' ? 'Psychiatric Intake & Demographics' : 'Physical Assessment'}
-                </h2>
-              </div>
+      <div className="flex flex-col gap-10">
+        {/* Primary Demographics & Assessment Block */}
+        <div className="flex flex-col gap-8 bg-white p-8 rounded-xl border border-[#E5E7EB]">
+          <div className="flex items-center gap-3 border-b border-[#E5E7EB] pb-4">
+            <Stethoscope className="w-5 h-5 text-[#6B7280]" />
+            <h2 className="text-xl font-semibold text-[#111827]">
+              Clinical Assessment & Demographics
+            </h2>
+          </div>
 
               <div className="grid grid-cols-1 gap-6">
                 <div>
@@ -562,85 +479,8 @@ export default function Intake() {
             </div>
           )}
 
-          {/* Adaptive AI Case Screening Section */}
-          {analysisType === 'adaptive' && (
-            <div className="flex flex-col gap-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-white p-8 rounded-xl border border-emerald-200 shadow-sm">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-emerald-200 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-emerald-600 text-white rounded-lg shadow-sm">
-                    <Activity className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900">Adaptive AI Assessment</h2>
-                    <p className="text-xs text-gray-600 mt-0.5">Generates dynamic case questions & auto-determines psychiatric screening requirement.</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={runAdaptiveAiTriage}
-                  disabled={isGeneratingAdaptive}
-                  className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 text-white font-semibold text-sm rounded-lg hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50 flex-shrink-0"
-                >
-                  {isGeneratingAdaptive ? (
-                    <>
-                      <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                      Analyzing Case Data...
-                    </>
-                  ) : (
-                    <>
-                      <Activity className="w-4 h-4 text-emerald-200" />
-                      Adaptive AI Run
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {/* Adaptive Questions List */}
-              {adaptiveQuestions.length > 0 && (
-                <div className="flex flex-col gap-4">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-emerald-600" />
-                    Targeted Case Follow-Up Questions ({adaptiveQuestions.length})
-                  </h3>
-                  <div className="space-y-3">
-                    {adaptiveQuestions.map((q, idx) => (
-                      <div key={idx} className="bg-white p-4 rounded-lg border border-emerald-100 shadow-xs flex flex-col gap-2">
-                        <label className="text-sm font-semibold text-gray-900 flex items-start gap-2">
-                          <span className="w-5 h-5 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">{idx + 1}</span>
-                          {q}
-                        </label>
-                        <input
-                          type="text"
-                          value={adaptiveAnswers[idx] || ''}
-                          onChange={e => setAdaptiveAnswers(prev => ({ ...prev, [idx]: e.target.value }))}
-                          placeholder="Enter patient response or clinical observation..."
-                          className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Psychiatric Auto-Determination Banner */}
-              {psychiatricRecommended !== null && (
-                <div className={`p-4 rounded-xl border flex items-start gap-3 shadow-xs ${
-                  psychiatricRecommended ? 'bg-violet-50 border-violet-200 text-violet-900' : 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                }`}>
-                  <Brain className="w-5 h-5 flex-shrink-0 mt-0.5 text-violet-600" />
-                  <div className="flex-1">
-                    <p className="font-bold text-sm">
-                      {psychiatricRecommended ? '🧠 Psychiatric Screening (PHQ-9 / GAD-7) RECOMMENDED' : '✅ Physical Evaluation Sufficient'}
-                    </p>
-                    <p className="text-xs mt-1 text-gray-700">{psychiatricReason}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Psychiatric Block */}
-          {(analysisType === 'psychiatric' || analysisType === 'both' || (analysisType === 'adaptive' && psychiatricRecommended === true)) && (
+          {(analysisType === 'psychiatric' || analysisType === 'both') && (
             <div className="flex flex-col gap-8 bg-white p-8 rounded-xl border border-[#E5E7EB]">
               <div className="flex items-center gap-3 border-b border-[#E5E7EB] pb-4">
                 <Brain className="w-5 h-5 text-[#6B7280]" />

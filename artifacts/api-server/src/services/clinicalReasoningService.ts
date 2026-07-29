@@ -216,7 +216,6 @@ ${intakeData.alcohol ? `Alcohol: ${intakeData.alcohol}` : ""}
 ${scores ? `PHQ-9 Score: ${scores.phq9}/27 | GAD-7 Score: ${scores.gad7}/21` : ""}
 ${intakeData.lifeStressors && intakeData.lifeStressorsDetails ? `Life Stressors: ${intakeData.lifeStressorsDetails}` : ""}
 ${intakeData.previousMentalHealthDiagnosis ? `Prior Mental Health History: ${intakeData.mentalHealthDiagnosisDetails || "Yes"}` : ""}
-${(intakeData as any).adaptiveQA?.length ? `ADAPTIVE AI CASE QUESTIONS & PATIENT ANSWERS:\n${((intakeData as any).adaptiveQA as Array<{ question: string; answer: string }>).map((item, i) => `Q${i+1}: ${item.question}\nPatient Answer: ${item.answer || 'Not answered'}`).join('\n')}` : ""}
 
 EXTRACTED LAB PARAMETERS (${labParameters.length} total):
 ${labParameters.length > 0 ? JSON.stringify(labParameters, null, 2) : "No lab parameters extracted from documents."}
@@ -228,8 +227,8 @@ FULL MEDICAL DOCUMENT CONTEXT:
 ${contextSummary}
 
 INSTRUCTIONS:
-1. Analyze ALL findings, patient intake data, and adaptive Q&A responses together holistically.
-2. IMPORTANT FOR DIRECT INTAKE / ADAPTIVE AI CASES (WITHOUT LAB DOCS): If no lab parameters are provided, perform full clinical reasoning on the chief complaint, reported symptoms, medical history, and Adaptive AI Q&A answers. Generate structured clinical findings for each key symptom or clinical presentation (e.g. "Persistent febrile illness with GI involvement", "Acute tension/vascular headache pattern"). NEVER return empty findings or an empty report!
+1. Analyze ALL findings, patient intake data, and extracted clinical context together holistically.
+2. IMPORTANT FOR DIRECT INTAKE CASES (WITHOUT LAB DOCS): If no lab parameters are provided, perform full clinical reasoning on the chief complaint, reported symptoms, and medical history. Generate structured clinical findings for each key symptom or clinical presentation (e.g. "Persistent febrile illness with GI involvement", "Acute tension/vascular headache pattern"). NEVER return empty findings or an empty report!
 3. FOR HANDWRITTEN DOCTOR PRESCRIPTIONS & CAMERA SCANS: Interpret common medical abbreviations (OD, BD, TID, QID, SOS, HS, PO, IV) and handwritten doctor notes. Extract all prescribed items accurately.
 4. For EVERY abnormal parameter or key clinical finding, provide complete details (whatItMeasures, whyImportant, clinicalInterpretation, possibleCauses, associatedSymptoms, potentialComplications, followUpInvestigations).
 5. Generate a clinicalConclusion that reads like a consultant physician's summary letter.

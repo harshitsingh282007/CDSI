@@ -40,15 +40,7 @@ function formatIntakeContext(intakeData: Record<string, unknown>): string {
   if (intakeData.smoking) parts.push(`Smoking History: ${intakeData.smoking}`);
   if (intakeData.alcohol) parts.push(`Alcohol Consumption: ${intakeData.alcohol}`);
 
-  // Adaptive AI Q&A formatting
-  const adaptiveQA = intakeData.adaptiveQA as Array<{ question: string; answer: string }> | undefined;
-  if (Array.isArray(adaptiveQA) && adaptiveQA.length > 0) {
-    parts.push("\nADAPTIVE AI CASE SCREENING QUESTIONS & PATIENT RESPONSES:");
-    adaptiveQA.forEach((qa, idx) => {
-      parts.push(`Q${idx + 1}: ${qa.question}`);
-      parts.push(`Patient Answer: ${qa.answer || "No response provided"}`);
-    });
-  }
+
 
   // Psychiatric screening answers
   if (Array.isArray(intakeData.phq9Answers)) {
