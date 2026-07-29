@@ -121,13 +121,6 @@ async function* parseSSETokens(body: ReadableStream<Uint8Array>): AsyncGenerator
 
 // ── Core AI call (non-streaming) ────────────────────────────────────────────
 
-const GEMINI_MODELS = [
-  "gemini-1.5-flash",
-  "gemini-2.0-flash",
-  "gemini-1.5-pro",
-  "gemini-2.5-flash",
-];
-
 async function callProvider(
   prompt: string,
   systemPrompt: string,
@@ -140,15 +133,22 @@ async function callProvider(
     return { content: "", error: "AI_API_KEY not configured. Set AI_API_KEY, AI_BASE_URL, and AI_MODEL environment variables.", partial: true };
   }
   if (!baseUrl) {
-    return { content: "", error: "AI_BASE_URL not configured. Set the base URL for your AI provider (e.g. https://api.deepseek.com/v1).", partial: true };
+    return { content: "", error: "AI_BASE_URL not configured. Set the base URL for your AI provider.", partial: true };
   }
 
   const url = getCompletionsUrl(baseUrl);
   
-  // Build a list of models to try (primary model first, followed by fallbacks)
+  // Build a list of models to try
   const modelsToTry = [configuredModel];
-  for (const m of GEMINI_MODELS) {
-    if (!modelsToTry.includes(m)) modelsToTry.push(m);
+  
+  if (baseUrl.includes("generativelanguage.googleapis.com")) {
+    for (const m of ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]) {
+      if (!modelsToTry.includes(m)) modelsToTry.push(m);
+    }
+  } else if (baseUrl.includes("open.bigmodel.cn")) {
+    for (const m of ["glm-4-flash", "glm-4-air", "glm-4"]) {
+      if (!modelsToTry.includes(m)) modelsToTry.push(m);
+    }
   }
 
   let lastError = "";
