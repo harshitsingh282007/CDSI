@@ -373,9 +373,18 @@ function FindingCard({ finding }: { finding: ExtendedFinding }) {
 
 // ── Main Report ────────────────────────────────────────────────────────────
 export default function Report() {
-  const { report: rawReport, jobId, language, sessionId } = useCDSI();
+  const { report: rawReport, setReport, jobId, language, sessionId } = useCDSI();
   const [, setLocation] = useLocation();
-  const report = rawReport as unknown as ExtendedReport | null;
+  const report = rawReport ? {
+    ...(rawReport as unknown as ExtendedReport),
+    labParameters: (rawReport as any).labParameters || [],
+    findings: (rawReport as any).findings || [],
+    criticalValues: (rawReport as any).criticalValues || [],
+    prescriptions: (rawReport as any).prescriptions || [],
+    organSystems: (rawReport as any).organSystems || [],
+    possibleConditions: (rawReport as any).possibleConditions || [],
+    nextSteps: (rawReport as any).nextSteps || []
+  } : null;
 
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
   const [labSearch, setLabSearch] = useState('');
@@ -404,6 +413,8 @@ export default function Report() {
       setLocation('/');
     }
   }, [report, activeJobId, setLocation]);
+
+
 
   if (!report) {
     return (
