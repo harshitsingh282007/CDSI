@@ -243,6 +243,9 @@ function extractGenericPrescriptions(text: string): PrescriptionItem[] {
     }
   }
 
+  return list;
+}
+
 function extractIndianPrescriptions(text: string): PrescriptionItem[] {
   const list: PrescriptionItem[] = [];
 
