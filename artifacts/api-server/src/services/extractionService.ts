@@ -250,19 +250,19 @@ function extractIndianPrescriptions(text: string): PrescriptionItem[] {
   const list: PrescriptionItem[] = [];
 
   const explicitMeds = [
-    { name: "TAB. DAILY (B-Complex Forte + Vit B12 + Biotin)", generic: "B-Complex + Vit B12 + Biotin", dose: "100mcg", route: "Oral", freq: "0-0-1 (Bedtime)", dur: "1 month", timing: "After food" },
-    { name: "SYP. APTIMAX", generic: "Giloy + Saunf + Kutki + Vidang", dose: "10ml", route: "Oral", freq: "2-0-2 (Twice Daily)", dur: "1 month", timing: "After food" },
-    { name: "TAB. LMP-3", generic: "Methylcobalamin + L-Methylfolate + Pyridoxal-5-Phosphate", dose: "1 Tab", route: "Oral", freq: "1-0-0 (Morning)", dur: "1 month", timing: "After food" },
-    { name: "TAB. LEMCAL D3 60K", generic: "Cholecalciferol (Vitamin D3) 60,000 IU", dose: "60k IU", route: "Oral", freq: "0-0-1 (Weekly)", dur: "1 month", timing: "After food" },
-    { name: "CAP. ROB DSR", generic: "Domperidone 30mg + Rabeprazole 20mg", dose: "30mg/20mg", route: "Oral", freq: "1-0-0 (Morning)", dur: "7-14 days", timing: "Before food (Empty Stomach)" },
-    { name: "INJ. LEMCAL D3", generic: "Vitamin D3 Injection", dose: "600,000 IU", route: "Intramuscular (IM)", freq: "1-0-0 (Once Weekly)", dur: "2-4 weeks", timing: "Clinical administration" },
-    { name: "KENACORT 0.1% ORAL PASTE", generic: "Triamcinolone Acetonide 0.1%", dose: "0.1% w/w", route: "Topical / Oral Paste", freq: "1-1-1 (TID)", dur: "7 days", timing: "After meals" },
-    { name: "CANDID MOUTH GEL + BETNESOL FORTE", generic: "Clotrimazole + Betamethasone", dose: "Topical + 0.5mg", route: "Oral Paste + Tab", freq: "1-1-1 (TID)", dur: "7 days", timing: "After meals" },
-    { name: "TAB. NIMFORD", generic: "Nimesulide 100mg + Paracetamol 325mg", dose: "100mg/325mg", route: "Oral", freq: "1-0-1 (BD)", dur: "3 days", timing: "After food (SOS)" },
-    { name: "POW. ELECTRAL 4.4GM", generic: "Oral Rehydration Salts (ORS)", dose: "4.4g / sachet", route: "Oral", freq: "1-0-0 (In 1L Water)", dur: "3 days", timing: "Frequent sips" },
-    { name: "TAB. RISEBOK", generic: "Rifaximin / Gastro-antibiotic", dose: "400mg / 550mg", route: "Oral", freq: "1-0-1 (BD)", dur: "7-14 days", timing: "After food" },
-    { name: "CAP. NIFTRAN", generic: "Nitrofurantoin", dose: "100mg", route: "Oral", freq: "1-0-1 (BD)", dur: "7 days", timing: "After food" },
-    { name: "TAB. COMBIFLAM", generic: "Ibuprofen 400mg + Paracetamol 325mg", dose: "400mg/325mg", route: "Oral", freq: "1-0-1 (BD SOS)", dur: "3-5 days", timing: "After food" },
+    { name: "B-Complex Forte + Vit B12 + Biotin", generic: "B-Complex + Vit B12 + Biotin", dose: "1 Tab", route: "Oral", freq: "1 Tab Daily (Bedtime)", dur: "1 month", timing: "After food" },
+    { name: "Syp. Aptimax", generic: "Giloy + Saunf + Kutki + Vidang", dose: "10ml", route: "Oral", freq: "2-0-2 (Twice Daily)", dur: "1 month", timing: "After food" },
+    { name: "Tab. LMP-3", generic: "Methylcobalamin + L-Methylfolate + Pyridoxal-5-Phosphate", dose: "1 Tab", route: "Oral", freq: "1-0-0 (Morning)", dur: "1 month", timing: "After food" },
+    { name: "Tab. Lemcal D3 60K", generic: "Cholecalciferol (Vitamin D3) 60,000 IU", dose: "60k IU", route: "Oral", freq: "0-0-1 (Weekly)", dur: "1 month", timing: "After food" },
+    { name: "Cap. Rob DSR", generic: "Domperidone 30mg + Rabeprazole 20mg", dose: "30mg/20mg", route: "Oral", freq: "1-0-0 (Morning)", dur: "7-14 days", timing: "Before food (Empty Stomach)" },
+    { name: "Inj. Lemcal D3", generic: "Vitamin D3 Injection", dose: "600,000 IU", route: "Intramuscular (IM)", freq: "1-0-0 (Once Weekly)", dur: "2-4 weeks", timing: "Clinical administration" },
+    { name: "Kenacort 0.1% Oral Paste", generic: "Triamcinolone Acetonide 0.1%", dose: "0.1% w/w", route: "Topical / Oral Paste", freq: "1-1-1 (TID)", dur: "7 days", timing: "After meals" },
+    { name: "Candid Mouth Gel + Betnesol", generic: "Clotrimazole + Betamethasone", dose: "Topical + 0.5mg", route: "Oral Paste + Tab", freq: "1-1-1 (TID)", dur: "7 days", timing: "After meals" },
+    { name: "Tab. Nimford", generic: "Nimesulide 100mg + Paracetamol 325mg", dose: "100mg/325mg", route: "Oral", freq: "1-0-1 (BD)", dur: "3 days", timing: "After food (SOS)" },
+    { name: "Pow. Electral 4.4gm", generic: "Oral Rehydration Salts (ORS)", dose: "4.4g / sachet", route: "Oral", freq: "1-0-0 (In 1L Water)", dur: "3 days", timing: "Frequent sips" },
+    { name: "Tab. Risebok", generic: "Rifaximin / Gastro-antibiotic", dose: "400mg / 550mg", route: "Oral", freq: "1-0-1 (BD)", dur: "7-14 days", timing: "After food" },
+    { name: "Cap. Niftran", generic: "Nitrofurantoin", dose: "100mg", route: "Oral", freq: "1-0-1 (BD)", dur: "7 days", timing: "After food" },
+    { name: "Tab. Combiflam", generic: "Ibuprofen 400mg + Paracetamol 325mg", dose: "400mg/325mg", route: "Oral", freq: "1-0-1 (BD SOS)", dur: "3-5 days", timing: "After food" },
   ];
 
   for (const m of explicitMeds) {
@@ -296,6 +296,43 @@ function extractPatientInfo(text: string): { name: string | null; age: number | 
     sex: sexMatch ? sexMatch[1].toLowerCase() : null,
   };
 }
+
+const DEFAULT_REF_RANGES: Record<string, string> = {
+  "hemoglobin": "13.5 - 17.5 g/dL",
+  "wbc": "4,500 - 11,000 cells/µL",
+  "total leucocyte count (tlc)": "4,000 - 11,000 cells/µL",
+  "platelet count": "150,000 - 400,000 cells/µL",
+  "rbc count": "4.5 - 6.0 M/µL",
+  "neutrophils": "50 - 70 %",
+  "lymphocytes": "20 - 40 %",
+  "monocytes": "2 - 8 %",
+  "eosinophils": "1 - 6 %",
+  "basophils": "0 - 1 %",
+  "serum creatinine": "0.7 - 1.3 mg/dL",
+  "creatinine": "0.7 - 1.3 mg/dL",
+  "blood urea": "15 - 45 mg/dL",
+  "blood urea nitrogen (bun)": "7 - 20 mg/dL",
+  "total bilirubin": "0.1 - 1.2 mg/dL",
+  "direct bilirubin": "0.0 - 0.3 mg/dL",
+  "indirect bilirubin": "0.1 - 0.8 mg/dL",
+  "ast (sgot)": "10 - 40 IU/L",
+  "sgot": "10 - 40 IU/L",
+  "alt (sgpt)": "7 - 56 IU/L",
+  "sgpt": "7 - 56 IU/L",
+  "alp": "30 - 120 IU/L",
+  "alkaline phosphatase": "30 - 120 IU/L",
+  "tsh": "0.7 - 6.4 uIU/mL",
+  "vitamin d (25 hydroxy)": "30 - 100 ng/mL",
+  "vitamin d": "30 - 100 ng/mL",
+  "vitamin b12": "200 - 1,100 pg/mL",
+  "fasting blood sugar": "70 - 100 mg/dL",
+  "random blood sugar": "70 - 140 mg/dL",
+  "serum sodium": "135 - 155 mmol/L",
+  "serum potassium": "3.5 - 5.5 mmol/L",
+  "serum uric acid": "3.5 - 8.5 mg/dL",
+  "salmonella typhi o": "< 1:80 (Negative)",
+  "salmonella typhi h": "< 1:80 (Negative)",
+};
 
 function extractGenericTableLabs(text: string): LabParameter[] {
   const labs: LabParameter[] = [];
@@ -334,7 +371,11 @@ function extractGenericTableLabs(text: string): LabParameter[] {
       const valStr = lineMatch[2].trim();
       const rawUnit = lineMatch[3]?.trim() || null;
       const rawFlag = lineMatch[4]?.trim()?.toUpperCase() || null;
-      const refRange = lineMatch[5]?.trim() || null;
+      let refRange = lineMatch[5]?.trim() || null;
+
+      if (!refRange) {
+        refRange = DEFAULT_REF_RANGES[lowerName] || null;
+      }
 
       let status: LabParameter["status"] = "normal";
       if (rawFlag === "L" || rawFlag === "LOW") status = "low";

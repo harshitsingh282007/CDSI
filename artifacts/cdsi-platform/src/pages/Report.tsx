@@ -523,12 +523,12 @@ export default function Report() {
 
       {/* ── Critical Alert Banner ── */}
       {safeCriticalValues.length > 0 && (
-        <div className="bg-red-600 text-white px-5 py-4 rounded-xl flex items-start gap-3 shadow">
-          <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-semibold">⚠ {safeCriticalValues.length} {t('criticalAlerts', language)} Detected</p>
-            <p className="text-sm mt-1 text-red-100">{safeCriticalValues.join(' · ')}</p>
+        <div className="bg-red-600 text-white px-5 py-3 rounded-xl flex items-center justify-between shadow">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+            <p className="font-bold text-base tracking-tight">Critical Alerts: {safeCriticalValues.length}</p>
           </div>
+          <span className="text-xs bg-red-700/80 px-3 py-1 rounded-full font-mono text-red-100 font-semibold">{safeCriticalValues.length} Values Exceeded High Risk Thresholds</span>
         </div>
       )}
 
@@ -737,10 +737,8 @@ export default function Report() {
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                <Activity className="w-5 h-5 text-gray-500" />{t('organSystems', language)}
-                <span className="text-xs font-normal text-gray-500">
-                  ({criticalSystems.length} Critical, {abnormalSystems.length} Abnormal, {normalSystems.length} Normal)
-                </span>
+                <Activity className="w-5 h-5 text-gray-500" />
+                Organ Systems ({criticalSystems.length} Critical, {abnormalSystems.length} Abnormal, {normalSystems.length} Normal, {unknownSystems.length} Unknown)
               </h2>
 
               {(normalSystems.length > 0 || unknownSystems.length > 0) && (
@@ -828,67 +826,57 @@ export default function Report() {
         );
       })()}
 
-      {/* ── Confirmed Findings (With Toggle Switch) ── */}
-      {confirmedFindings.length > 0 && (() => {
-        const visibleFindings = showAllFindings ? confirmedFindings : confirmedFindings.slice(0, 3);
-        const hasMore = confirmedFindings.length > 3;
+      {/* ── Confirmed Findings (View Nothing Default Toggle Mode) ── */}
+      {confirmedFindings.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between p-3.5 bg-emerald-50/70 border border-emerald-200/80 rounded-xl">
+            <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+              <HeartPulse className="w-5 h-5 text-emerald-600" />{t('confirmedFindings', language)}
+              <span className="text-xs font-normal text-emerald-800">({confirmedFindings.length} findings available)</span>
+            </h2>
 
-        return (
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                <HeartPulse className="w-5 h-5 text-emerald-600" />{t('confirmedFindings', language)}
-                <span className="text-xs font-normal text-gray-400">({confirmedFindings.length} findings)</span>
-              </h2>
-
-              {hasMore && (
-                <button
-                  onClick={() => setShowAllFindings(!showAllFindings)}
-                  className="flex items-center gap-1.5 text-xs text-emerald-700 hover:text-emerald-800 font-semibold transition-colors border border-emerald-200 bg-emerald-50 px-2.5 py-1 rounded-lg cursor-pointer"
-                >
-                  <span>{showAllFindings ? 'Show Top 3' : `View All (${confirmedFindings.length})`}</span>
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showAllFindings ? 'rotate-180' : ''}`} />
-                </button>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              {visibleFindings.map((f, i) => <FindingCard key={i} finding={f} />)}
-            </div>
+            <button
+              onClick={() => setShowAllFindings(!showAllFindings)}
+              className="flex items-center gap-1.5 text-xs text-emerald-800 hover:text-emerald-900 font-bold transition-colors bg-white border border-emerald-300 px-3 py-1.5 rounded-lg shadow-sm cursor-pointer"
+            >
+              <span>{showAllFindings ? 'Collapse Findings' : `View All Findings (${confirmedFindings.length})`}</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showAllFindings ? 'rotate-180' : ''}`} />
+            </button>
           </div>
-        );
-      })()}
 
-      {/* ── Differentials (With Toggle Switch) ── */}
-      {possibleDifferentials.length > 0 && (() => {
-        const visibleDifferentials = showAllDifferentials ? possibleDifferentials : possibleDifferentials.slice(0, 3);
-        const hasMore = possibleDifferentials.length > 3;
-
-        return (
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-amber-500" />{t('possibleDifferentials', language)}
-                <span className="text-xs font-normal text-gray-400">({possibleDifferentials.length} items)</span>
-              </h2>
-
-              {hasMore && (
-                <button
-                  onClick={() => setShowAllDifferentials(!showAllDifferentials)}
-                  className="flex items-center gap-1.5 text-xs text-amber-800 hover:text-amber-900 font-semibold transition-colors border border-amber-200 bg-amber-50 px-2.5 py-1 rounded-lg cursor-pointer"
-                >
-                  <span>{showAllDifferentials ? 'Show Top 3' : `View All (${possibleDifferentials.length})`}</span>
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showAllDifferentials ? 'rotate-180' : ''}`} />
-                </button>
-              )}
-            </div>
-
+          {showAllFindings && (
             <div className="flex flex-col gap-2">
-              {visibleDifferentials.map((f, i) => <FindingCard key={i} finding={f} />)}
+              {confirmedFindings.map((f, i) => <FindingCard key={i} finding={f} />)}
             </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Differentials (View Nothing Default Toggle Mode) ── */}
+      {possibleDifferentials.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-xl">
+            <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-amber-500" />{t('possibleDifferentials', language)}
+              <span className="text-xs font-normal text-amber-800">({possibleDifferentials.length} items available)</span>
+            </h2>
+
+            <button
+              onClick={() => setShowAllDifferentials(!showAllDifferentials)}
+              className="flex items-center gap-1.5 text-xs text-amber-900 hover:text-amber-950 font-bold transition-colors bg-white border border-amber-300 px-3 py-1.5 rounded-lg shadow-sm cursor-pointer"
+            >
+              <span>{showAllDifferentials ? 'Collapse Differentials' : `View All Differentials (${possibleDifferentials.length})`}</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showAllDifferentials ? 'rotate-180' : ''}`} />
+            </button>
           </div>
-        );
-      })()}
+
+          {showAllDifferentials && (
+            <div className="flex flex-col gap-2">
+              {possibleDifferentials.map((f, i) => <FindingCard key={i} finding={f} />)}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Recommendations ── */}
       {recommendations.length > 0 && (

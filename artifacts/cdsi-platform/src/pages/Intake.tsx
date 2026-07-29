@@ -22,7 +22,7 @@ export default function Intake() {
   const startAnalysis = useStartAnalysis();
   const [errorMsg, setErrorMsg] = useState('');
 
-  const [analysisType, setAnalysisType] = useState<IntakeFormDataAnalysisType | null>(null);
+  const [analysisType, setAnalysisType] = useState<IntakeFormDataAnalysisType>('physical');
   
   // Physical State
   const [patientName, setPatientName] = useState('');
@@ -53,12 +53,6 @@ export default function Intake() {
   const [lifeStressorsDetails, setLifeStressorsDetails] = useState('');
   const [previousMentalHealthDiagnosis, setPreviousMentalHealthDiagnosis] = useState(false);
   const [mentalHealthDiagnosisDetails, setMentalHealthDiagnosisDetails] = useState('');
-  // Adaptive AI State
-  const [isGeneratingAdaptive, setIsGeneratingAdaptive] = useState(false);
-  const [adaptiveQuestions, setAdaptiveQuestions] = useState<string[]>([]);
-  const [adaptiveAnswers, setAdaptiveAnswers] = useState<Record<number, string>>({});
-  const [psychiatricRecommended, setPsychiatricRecommended] = useState<boolean | null>(null);
-  const [psychiatricReason, setPsychiatricReason] = useState<string>('');
 
   const runAdaptiveAiTriage = async () => {
     setIsGeneratingAdaptive(true);
