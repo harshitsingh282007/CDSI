@@ -464,7 +464,7 @@ export async function extractStructuredData(
   let patientAge: number | null = null;
   let patientSex: string | null = null;
 
-  // Layer 1: ALWAYS run document-wide deterministic parsers first to guarantee immediate baseline extraction
+  // Layer 1: Instant high-speed baseline text extraction
   if (medicalContext.trim()) {
     allLabs.push(...extractGenericTableLabs(medicalContext));
     allLabs.push(...extractLabsRegex(medicalContext));
@@ -473,28 +473,36 @@ export async function extractStructuredData(
     allPrescriptions.push(...extractPrescriptionsRegex(medicalContext));
   }
 
+  const dedupedLabs = deduplicateLabs(allLabs);
+  const dedupedPrescriptions = deduplicatePrescriptions(allPrescriptions);
+  const patientInfo = extractPatientInfo(medicalContext);
+
+  // FAST PATH FOR DIGITAL REPORTS: Return immediately in <0.1s to avoid 90s sequential API loops & Render HTTP timeouts!
+  if (dedupedLabs.length >= 3 || dedupedPrescriptions.length >= 1) {
+    logger.info({ labCount: dedupedLabs.length, medCount: dedupedPrescriptions.length }, "Fast-path digital extraction completed in <0.1s");
+    return {
+      labParameters: dedupedLabs,
+      prescriptions: dedupedPrescriptions,
+      patientName: patientName || patientInfo.name,
+      patientAge: patientAge || patientInfo.age,
+      patientSex: patientSex || patientInfo.sex,
+      extractionErrors: errors,
+    };
+  }
+
   const imagesList = pageImages ?? [];
   const textsList = (pageTexts && pageTexts.length > 0) ? pageTexts : splitTextIntoPages(medicalContext);
-  const totalPages = Math.max(imagesList.length, textsList.length);
+  const totalPages = Math.min(Math.max(imagesList.length, textsList.length), 4); // Limit to top 4 pages max to prevent HTTP gateway timeout
 
-  logger.info({ totalPages, imageCount: imagesList.length, textPageCount: textsList.length, baselineLabs: allLabs.length, baselineMeds: allPrescriptions.length }, "Executing Page-by-Page AI Vision & Text Extraction");
+  logger.info({ totalPages, imageCount: imagesList.length, textPageCount: textsList.length, baselineLabs: allLabs.length }, "Executing AI Vision extraction on sparse document pages");
 
-  // Page-by-Page Extraction: Loops through EACH page individually to extract ALL labs & prescriptions
   if (totalPages > 0) {
-    logger.info({ totalPages }, "Executing Page-by-Page AI Vision & Text Extraction");
     for (let p = 0; p < totalPages; p++) {
       const imgBuf = imagesList[p];
       const textChunk = textsList[p] ?? "";
 
       const prompt = `PAGE ${p + 1} OF ${totalPages} - EXHAUSTIVE MEDICAL DATA EXTRACTION.
-Analyze Page ${p + 1} of the patient's medical record (pathology report table or doctor prescription note).
-
-Extract EVERY SINGLE medical test parameter (name, value, unit, reference range, status) and EVERY SINGLE prescription item (medicine name, dosage, frequency, duration, route, special instructions) visible on Page ${p + 1}.
-
-Page Text Context:
-${textChunk}
-
-Return strictly valid JSON matching the exact schema.`;
+Analyze Page ${p + 1} of the patient's medical record. Extract lab parameters and prescriptions. Return strictly valid JSON.`;
 
       try {
         const response = await callAI("entity_extract", prompt, LAB_SYSTEM_PROMPT, {
@@ -521,7 +529,6 @@ Return strictly valid JSON matching the exact schema.`;
         logger.warn({ err, page: p + 1 }, "Page-by-page AI extraction error");
       }
 
-      // Page-level deterministic parsers
       if (textChunk) {
         allLabs.push(...extractGenericTableLabs(textChunk));
         allLabs.push(...extractLabsRegex(textChunk));
@@ -532,26 +539,12 @@ Return strictly valid JSON matching the exact schema.`;
     }
   }
 
-  // Document-wide fallback pass
-  if (medicalContext.trim()) {
-    allLabs.push(...extractGenericTableLabs(medicalContext));
-    allLabs.push(...extractLabsRegex(medicalContext));
-    allPrescriptions.push(...extractGenericPrescriptions(medicalContext));
-    allPrescriptions.push(...extractIndianPrescriptions(medicalContext));
-    allPrescriptions.push(...extractPrescriptionsRegex(medicalContext));
-  }
-
-  const patientInfo = extractPatientInfo(medicalContext);
-  if (!patientName) patientName = patientInfo.name;
-  if (!patientAge) patientAge = patientInfo.age;
-  if (!patientSex) patientSex = patientInfo.sex;
-
   return {
     labParameters: deduplicateLabs(allLabs),
     prescriptions: deduplicatePrescriptions(allPrescriptions),
-    patientName,
-    patientAge,
-    patientSex,
+    patientName: patientName || patientInfo.name,
+    patientAge: patientAge || patientInfo.age,
+    patientSex: patientSex || patientInfo.sex,
     extractionErrors: errors,
   };
 }
