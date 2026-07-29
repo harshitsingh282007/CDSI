@@ -178,31 +178,11 @@ export default function Intake() {
 
   const isFormValid = analysisType !== null;
 
-  const onSubmit = async () => {
+  const onSubmit = () => {
     if (!analysisType) return;
 
-    let targetJobId = jobId;
-    if (!targetJobId) {
-      try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-        const res = await fetch(`${apiUrl}/api/upload`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename: 'Intake Assessment', text: `Patient Intake Assessment (${analysisType})` }),
-        });
-        const data = await res.json();
-        if (data.jobId) {
-          targetJobId = data.jobId;
-          setJobId(targetJobId);
-        } else {
-          targetJobId = `job-intake-${Date.now()}`;
-          setJobId(targetJobId);
-        }
-      } catch (err) {
-        targetJobId = `job-intake-${Date.now()}`;
-        setJobId(targetJobId);
-      }
-    }
+    const targetJobId = jobId || `job-intake-${Date.now()}`;
+    if (!jobId) setJobId(targetJobId);
 
     const intakeData: IntakeFormData & { patientName?: string | null } = {
       analysisType,

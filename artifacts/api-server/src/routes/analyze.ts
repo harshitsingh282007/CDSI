@@ -23,11 +23,15 @@ router.post("/analyze", async (req: Request, res: Response) => {
     if (!jobId) { res.status(400).json({ error: "jobId is required" }); return; }
     if (!intakeData) { res.status(400).json({ error: "intakeData is required" }); return; }
 
-    const job = getJob(jobId);
-    if (!job) { res.status(404).json({ error: `Job ${jobId} not found` }); return; }
-    if (!job.medicalContext) {
-      res.status(400).json({ error: "No medical context found. Please upload documents first." });
-      return;
+    let job = getJob(jobId);
+    if (!job) {
+      const intakeContext = `Direct Intake Assessment (${intakeData.analysisType ?? 'physical'}). Patient Name: ${intakeData.patientName ?? 'Patient'}, Chief Complaint: ${intakeData.chiefComplaint ?? 'General Clinical Assessment'}, Age: ${intakeData.age ?? 'Not specified'}, Sex: ${intakeData.biologicalSex ?? 'Not specified'}.`;
+      job = createJob(jobId, []);
+      updateJob(jobId, { medicalContext: intakeContext, intakeData });
+    } else if (!job.medicalContext) {
+      const intakeContext = `Direct Intake Assessment (${intakeData.analysisType ?? 'physical'}). Patient Name: ${intakeData.patientName ?? 'Patient'}, Chief Complaint: ${intakeData.chiefComplaint ?? 'General Clinical Assessment'}, Age: ${intakeData.age ?? 'Not specified'}, Sex: ${intakeData.biologicalSex ?? 'Not specified'}.`;
+      updateJob(jobId, { medicalContext: intakeContext });
+      job = getJob(jobId)!;
     }
 
     res.json({ jobId, status: "processing", message: "Clinical analysis started" });
