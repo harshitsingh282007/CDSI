@@ -4,7 +4,7 @@
 > An AI-powered health platform that transforms raw medical documents, lab panels, radiology scans, and prescriptions into structured, actionable clinical insights—accessible via Web, Mobile, and 1/1 NFC Smart Cards.
 
 [![Live POC](https://img.shields.io/badge/Live_POC-www.cdsi.in-0070F3?style=for-the-badge&logo=react)](http://www.cdsi.in/)
-[![Demo Key](https://img.shields.io/badge/Demo_Access_Key-1234567812345678-green?style=for-the-badge)](http://www.cdsi.in/)
+[![Demo Key](https://img.shields.io/badge/Demo_Access_Key-xxxxxxxxxxxxxxxx-green?style=for-the-badge)](http://www.cdsi.in/)
 [![Build Velocity](https://img.shields.io/badge/POC_Build_Time-72_Hours-orange?style=for-the-badge)]()
 
 ---
@@ -58,7 +58,7 @@ flowchart TD
 CDSI is evolving from an immediate software wedge into a global healthcare hardware-software network:
 
 ### Phase 1: Web & Mobile AI Parsing Engine *(LIVE V0 POC — Current Stage)*
-* Live web portal at [`www.cdsi.in`](http://www.cdsi.in/) (Demo Access Key: `1234567812345678`).
+* Live web portal at [`www.cdsi.in`](http://www.cdsi.in/) (Demo Access Key: `xxxxxxxxxxxxxxxx`).
 * Mobile-responsive interface walkthrough (`Latest V0 Mobile Interface.MP4`).
 * V2 Multi-Page Report Export engine generating structured PDF downloads.
 * 20-Language international UI translation system.
