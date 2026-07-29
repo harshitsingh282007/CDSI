@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useLocation } from 'wouter';
-import { Stethoscope, Brain, HeartPulse, Check, AlertTriangle, Sparkles, Activity, MessageSquare } from 'lucide-react';
+import { Stethoscope, Brain, Heart, HeartPulse, Check, AlertTriangle, Sparkles, Activity, MessageSquare } from 'lucide-react';
 import { useCDSI } from '../context/CDSIContext';
 import { useStartAnalysis, type IntakeFormData, type IntakeFormDataAnalysisType } from '@workspace/api-client-react';
 import { PHQ9_QUESTIONS, GAD7_QUESTIONS } from '../translations';
@@ -240,9 +240,8 @@ export default function Intake() {
               analysisType === 'both' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm ring-2 ring-[#16A34A]' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
             }`}
           >
-            <div className={`p-3 rounded-full flex gap-1 ${analysisType === 'both' ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280]'}`}>
-              <HeartPulse className="w-5 h-5" />
-              <Brain className="w-5 h-5" />
+            <div className={`p-3 rounded-full ${analysisType === 'both' ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280]'}`}>
+              <Heart className="w-6 h-6 text-red-500 fill-red-500/20" />
             </div>
             <div>
               <span className={`font-semibold text-sm block ${analysisType === 'both' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Physical + Psychiatric</span>
@@ -255,7 +254,6 @@ export default function Intake() {
       {/* Advanced Analysis Type (Dedicated Section) */}
       <div className="flex flex-col gap-4 pt-2">
         <h2 className="text-xs font-bold text-emerald-700 uppercase tracking-widest flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-emerald-600" />
           Advanced Analysis Type
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -268,11 +266,10 @@ export default function Intake() {
                 : 'border-emerald-200/80 bg-white hover:border-emerald-300 hover:bg-emerald-50/30'
             }`}
           >
-            <div className={`w-12 h-12 rounded-full relative flex items-center justify-center transition-transform ${
+            <div className={`p-3 rounded-full flex items-center justify-center transition-transform ${
               analysisType === 'adaptive' ? 'bg-emerald-600 text-white shadow-md' : 'bg-emerald-50 text-emerald-600 border border-emerald-200/80'
             }`}>
               <Activity className="w-6 h-6" />
-              <Sparkles className="w-4 h-4 absolute -top-1 -right-1 text-amber-400 fill-amber-400 drop-shadow-xs" />
             </div>
             <span className={`font-bold text-base ${analysisType === 'adaptive' ? 'text-emerald-700' : 'text-gray-900'}`}>
               Adaptive AI Analysis
@@ -284,13 +281,13 @@ export default function Intake() {
       {/* Forms */}
       {analysisType && (
         <div className="flex flex-col gap-10">
-          {/* Physical Block (Includes Adaptive AI) */}
-          {(analysisType === 'physical' || analysisType === 'both' || analysisType === 'adaptive') && (
+          {/* Primary Demographics & Assessment Block */}
+          {analysisType && (
             <div className="flex flex-col gap-8 bg-white p-8 rounded-xl border border-[#E5E7EB]">
               <div className="flex items-center gap-3 border-b border-[#E5E7EB] pb-4">
                 <Stethoscope className="w-5 h-5 text-[#6B7280]" />
                 <h2 className="text-xl font-semibold text-[#111827]">
-                  {analysisType === 'adaptive' ? 'Adaptive AI Primary Intake' : 'Physical Assessment'}
+                  {analysisType === 'adaptive' ? 'Adaptive AI Primary Intake' : analysisType === 'psychiatric' ? 'Psychiatric Intake & Demographics' : 'Physical Assessment'}
                 </h2>
               </div>
 
