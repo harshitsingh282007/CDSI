@@ -454,7 +454,8 @@ export async function extractStructuredData(
       const textChunk = textsList[p] ?? "";
 
       const prompt = `PAGE ${p + 1} OF ${totalPages} - EXHAUSTIVE MEDICAL DATA EXTRACTION.
-Analyze Page ${p + 1} of the patient's medical record. Extract lab parameters and prescriptions. Return strictly valid JSON.`;
+Analyze Page ${p + 1} of the patient's medical record. Extract lab parameters and prescriptions. Return strictly valid JSON.
+${textChunk ? `\n\n--- DOCUMENT TEXT ---\n${textChunk}\n---------------------\n` : ""}`;
 
       try {
         const response = await callAI("entity_extract", prompt, LAB_SYSTEM_PROMPT, {
