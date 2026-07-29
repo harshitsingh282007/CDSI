@@ -81,6 +81,7 @@ router.post("/analyze", async (req: Request, res: Response) => {
     if (!job) {
       job = createJob(jobId, []);
       updateJob(jobId, { medicalContext: formattedIntake, intakeData });
+      job = getJob(jobId)!;
     } else {
       const combinedContext = job.medicalContext && !job.medicalContext.startsWith("PATIENT INTAKE")
         ? `${job.medicalContext}\n\n====================\n${formattedIntake}`
