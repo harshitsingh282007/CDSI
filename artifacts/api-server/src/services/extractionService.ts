@@ -300,51 +300,65 @@ function extractPatientInfo(text: string): { name: string | null; age: number | 
 function extractGenericTableLabs(text: string): LabParameter[] {
   const labs: LabParameter[] = [];
   const lines = text.split("\n");
-  const ignoreWords = ["page", "patient", "name", "date", "doctor", "hospital", "pathology", "sample", "barcode", "report", "method", "unit", "result", "status", "biological", "ref", "interval", "department", "test name", "of", "doc:"];
+  const ignoreHeaderWords = ["page", "patient", "doctor", "hospital", "pathology", "sample", "barcode", "report", "method", "unit", "result", "biological", "ref", "interval", "department", "test name", "sl.no", "sr.no", "doc:"];
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed || trimmed.length < 8) continue;
+    if (!trimmed || trimmed.length < 5) continue;
+
+    // Filter out page footers / headers
     if (/^\-\-\s*[0-9]+\s*of\b/i.test(trimmed) || /\bpage\s*[0-9]+/i.test(trimmed) || /\bof\s+[0-9]+\b/i.test(trimmed)) continue;
 
-    // Line parser: Test Name ... Number value ... Unit ... Status (H/L/N/C) ... Reference Range
-    const match = trimmed.match(/^([a-zA-Z\s\(\)\-\.\/]{3,45})\s+([0-9]+\.?[0-9]*)\s*([a-zA-Z%\/µu0-9\^\-]{1,15})?\s*([HLNC])?\s*([0-9]+\.?[0-9]*\s*[\-\–\:]\s*[0-9]+\.?[0-9]*)?/i);
+    // Flexible Line Matcher for pathology table rows:
+    // Group 1: Test Name (3 to 50 chars)
+    // Group 2: Value (number, decimal, ratio 1:160, range 10-12, or text POSITIVE/NEGATIVE/PRESENT/REACTIVE/TRACE/NIL/CLEAR)
+    // Group 3: Unit (optional)
+    // Group 4: Flag (HIGH, LOW, CRITICAL, NORMAL, ABN, H, L, C, N)
+    // Group 5: Reference Range (optional)
+    const lineMatch = trimmed.match(
+      /^([a-zA-Z0-9\s\(\)\-\.\/]{3,50})\s+([0-9]+\.?[0-9]*\s*[\-\:]\s*[0-9]+\.?[0-9]*|[0-9]+\.?[0-9]*|POSITIVE|NEGATIVE|PRESENT|ABSENT|REACTIVE|NON\-REACTIVE|TRACE|CLEAR|CLOUDY|TURBID|NIL|NORMAL|STRAW)\s*([a-zA-Z%\/µu0-9\^\-\s]{1,25})?\s*(HIGH|LOW|CRITICAL|NORMAL|ABN|[HLNC])?\s*([0-9]+\.?[0-9]*\s*[\-\–\:]\s*[0-9]+\.?[0-9]*)?/i
+    );
 
-    if (match && match[1] && match[2]) {
-      const name = match[1].trim();
+    if (lineMatch && lineMatch[1] && lineMatch[2]) {
+      let name = lineMatch[1].trim();
+
+      // Strip common prefixes: S., SERUM, PLASMA, BLOOD, URINE -
+      name = name.replace(/^(?:s\.|serum|plasma|blood|urine\s*[\-\:]?)\s+/i, "").trim();
       const lowerName = name.toLowerCase();
 
-      if (ignoreWords.some((word) => lowerName.startsWith(word) || lowerName.endsWith(word))) continue;
+      // Skip header / footer lines
+      if (ignoreHeaderWords.some((w) => lowerName.startsWith(w) || lowerName.endsWith(w))) continue;
       if (name.length < 3 || /^[0-9\s\-\_]+$/.test(name)) continue;
       if ((name.match(/[a-zA-Z]/g) ?? []).length < 3) continue;
 
-      const valStr = match[2];
-      const unit = match[3] || null;
-      const flag = match[4]?.toUpperCase();
-      const ref = match[5] || null;
+      const valStr = lineMatch[2].trim();
+      const rawUnit = lineMatch[3]?.trim() || null;
+      const rawFlag = lineMatch[4]?.trim()?.toUpperCase() || null;
+      const refRange = lineMatch[5]?.trim() || null;
 
       let status: LabParameter["status"] = "normal";
-      if (flag === "L") status = "low";
-      else if (flag === "H") status = "high";
-      else if (flag === "C") status = "critical";
+      if (rawFlag === "L" || rawFlag === "LOW") status = "low";
+      else if (rawFlag === "H" || rawFlag === "HIGH") status = "high";
+      else if (rawFlag === "C" || rawFlag === "CRITICAL" || rawFlag === "ABN") status = "critical";
+      else if (/positive|reactive|present/i.test(valStr)) status = "high";
 
       let panel = "Other";
-      if (/wbc|rbc|hb|hemoglobin|hematocrit|platelet|neutrophil|lymphocyte|eosinophil|monocyte|mcv|mch/i.test(name)) panel = "CBC";
-      else if (/bilirubin|sgot|sgpt|ast|alt|alp|albumin|protein|globulin/i.test(name)) panel = "LFT";
-      else if (/creatinine|urea|bun|uric|egfr/i.test(name)) panel = "KFT";
+      if (/wbc|tlc|rbc|hb|hemoglobin|hematocrit|platelet|plt|neutrophil|lymphocyte|eosinophil|monocyte|mcv|mch|mchc|pcv/i.test(name)) panel = "CBC";
+      else if (/bilirubin|sgot|sgpt|ast|alt|alp|alkaline|phosphatase|albumin|protein|globulin|ggt|ratio/i.test(name)) panel = "LFT";
+      else if (/creatinine|urea|bun|uric|egfr|calcium|phosphorus|sodium|potassium|chloride/i.test(name)) panel = "KFT";
       else if (/tsh|t3|t4|thyroid/i.test(name)) panel = "Thyroid";
-      else if (/vitamin|vit d|vit b/i.test(name)) panel = "Vitamins";
-      else if (/calcium|potassium|sodium|chloride|phosphorus/i.test(name)) panel = "Electrolytes";
-      else if (/glucose|sugar|hba1c/i.test(name)) panel = "Glucose";
-      else if (/urine|pus|ep cells|casts|crystals/i.test(name)) panel = "Urine";
+      else if (/vitamin|vit d|vit b|hydroxy|b12/i.test(name)) panel = "Vitamins";
+      else if (/glucose|sugar|hba1c|fasting|pp/i.test(name)) panel = "Glucose";
+      else if (/urine|pus|ep|epithelial|casts|crystals|sp\.?gr|ph|ketones|urobilinogen/i.test(name)) panel = "Urine";
+      else if (/widal|typhidot|typhi|serology|hiv|hbsag|hcv|vdrl|ra factor|crp|esr/i.test(name)) panel = "Infectious";
 
       labs.push({
         name,
         value: valStr,
-        unit,
-        referenceRange: ref,
+        unit: rawUnit,
+        referenceRange: refRange,
         status,
-        interpretation: `Extracted result: ${valStr}${unit ? " " + unit : ""}`,
+        interpretation: `Extracted result: ${valStr}${rawUnit ? " " + rawUnit : ""}`,
         panel,
       });
     }
