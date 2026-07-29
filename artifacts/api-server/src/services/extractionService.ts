@@ -444,9 +444,9 @@ export async function extractStructuredData(
 
   const imagesList = pageImages ?? [];
   const textsList = (pageTexts && pageTexts.length > 0) ? pageTexts : splitTextIntoPages(medicalContext);
-  const totalPages = Math.min(Math.max(imagesList.length, textsList.length), 4); // Limit to top 4 pages max to prevent HTTP gateway timeout
+  const totalPages = Math.min(Math.max(imagesList.length, textsList.length), 8); // Process up to 8 pages
 
-  logger.info({ totalPages, imageCount: imagesList.length, textPageCount: textsList.length, baselineLabs: allLabs.length }, "Executing AI Vision extraction on sparse document pages");
+  logger.info({ totalPages, imageCount: imagesList.length, textPageCount: textsList.length, baselineLabs: allLabs.length }, "Executing AI extraction on document pages");
 
   if (totalPages > 0) {
     for (let p = 0; p < totalPages; p++) {
@@ -454,8 +454,11 @@ export async function extractStructuredData(
       const textChunk = textsList[p] ?? "";
 
       const prompt = `PAGE ${p + 1} OF ${totalPages} - EXHAUSTIVE MEDICAL DATA EXTRACTION.
-Analyze Page ${p + 1} of the patient's medical record. Extract lab parameters and prescriptions. Return strictly valid JSON.
-${textChunk ? `\n\n--- DOCUMENT TEXT ---\n${textChunk}\n---------------------\n` : ""}`;
+Analyze Page ${p + 1} of the patient's medical record. Extract ALL lab parameters and prescriptions. Return strictly valid JSON.
+
+--- DOCUMENT TEXT ---
+${textChunk || medicalContext.slice(0, 6000)}
+---------------------`;
 
       try {
         const response = await callAI("entity_extract", prompt, LAB_SYSTEM_PROMPT, {
@@ -488,6 +491,39 @@ ${textChunk ? `\n\n--- DOCUMENT TEXT ---\n${textChunk}\n---------------------\n`
         allPrescriptions.push(...extractIndianPrescriptions(textChunk));
         allPrescriptions.push(...extractPrescriptionsRegex(textChunk));
       }
+    }
+  } else {
+    // Fallback: no page splitting worked, send the full text as one AI call
+    logger.info("No pages detected, sending full medicalContext to AI for extraction");
+    const prompt = `EXHAUSTIVE MEDICAL DATA EXTRACTION.
+Analyze the patient's complete medical record below. Extract ALL lab parameters and ALL prescriptions. Return strictly valid JSON.
+
+--- DOCUMENT TEXT ---
+${medicalContext.slice(0, 12000)}
+---------------------`;
+
+    try {
+      const response = await callAI("entity_extract", prompt, LAB_SYSTEM_PROMPT, {
+        language,
+        jsonMode: true,
+      });
+
+      if (response.content) {
+        const parsed = parseJsonFromText(response.content) as {
+          labParameters?: LabParameter[];
+          prescriptions?: PrescriptionItem[];
+          patientName?: string | null;
+          patientAge?: number | null;
+          patientSex?: string | null;
+        };
+        if (parsed.labParameters?.length) allLabs.push(...parsed.labParameters);
+        if (parsed.prescriptions?.length) allPrescriptions.push(...parsed.prescriptions);
+        if (!patientName && parsed.patientName) patientName = parsed.patientName;
+        if (!patientAge && parsed.patientAge) patientAge = parsed.patientAge;
+        if (!patientSex && parsed.patientSex) patientSex = parsed.patientSex;
+      }
+    } catch (err) {
+      logger.warn({ err }, "Full-context AI extraction error");
     }
   }
 
