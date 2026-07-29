@@ -24,8 +24,16 @@ const AI_MESSAGES = [
 ];
 
 export default function Processing() {
-  const { jobId, setReport } = useCDSI();
+  const { jobId, setJobId, setReport } = useCDSI();
   const [, setLocation] = useLocation();
+  const activeJobId = jobId || (typeof window !== 'undefined' ? sessionStorage.getItem('cdsi_job_id') : null);
+
+  useEffect(() => {
+    if (!jobId && activeJobId) {
+      setJobId(activeJobId);
+    }
+  }, [jobId, activeJobId, setJobId]);
+
   const [shouldFetchReport, setShouldFetchReport] = useState(false);
   const [displayProgress, setDisplayProgress] = useState(0);
   const [aiMessageIdx, setAiMessageIdx] = useState(0);
@@ -33,10 +41,10 @@ export default function Processing() {
   const msgTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef(Date.now());
 
-  const { data: statusData, isError: isStatusError } = useGetJobStatus(jobId || '', {
+  const { data: statusData, isError: isStatusError } = useGetJobStatus(activeJobId || '', {
     query: {
-      enabled: !!jobId,
-      queryKey: getGetJobStatusQueryKey(jobId || ''),
+      enabled: !!activeJobId,
+      queryKey: getGetJobStatusQueryKey(activeJobId || ''),
       refetchInterval: (query) => {
         const data = query.state.data;
         if (!data) return 1500;
@@ -51,10 +59,10 @@ export default function Processing() {
     (statusData?.status === 'completed' || statusData?.status === 'partial') &&
     (statusData?.progress ?? 0) >= 100;
 
-  const { data: reportData, isError: isReportError } = useGetReport(jobId || '', {
+  const { data: reportData, isError: isReportError } = useGetReport(activeJobId || '', {
     query: {
       enabled: shouldFetchReport && analysisFinished,
-      queryKey: getGetReportQueryKey(jobId || ''),
+      queryKey: getGetReportQueryKey(activeJobId || ''),
       retry: (failureCount, error) => {
         if (error && 'status' in error && (error as { status: number }).status === 404) {
           return failureCount < 30;
@@ -107,7 +115,7 @@ export default function Processing() {
     }
   }, [reportData, setReport, setLocation]);
 
-  if (!jobId) {
+  if (!activeJobId) {
     return (
       <div className="flex flex-col items-center justify-center h-[80vh] gap-4">
         <AlertCircle className="w-12 h-12 text-[#D97706]" />

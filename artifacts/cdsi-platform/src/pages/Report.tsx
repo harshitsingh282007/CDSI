@@ -384,19 +384,35 @@ export default function Report() {
   const [isStreaming, setIsStreaming] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const { data: chatHistory } = useGetChatHistory(sessionId, {
-    query: { enabled: !!sessionId, queryKey: getGetChatHistoryQueryKey(sessionId) }
+  const activeJobId = jobId || (typeof window !== 'undefined' ? sessionStorage.getItem('cdsi_job_id') : null);
+
+  const { data: fetchedReport } = useGetReport(activeJobId || '', {
+    query: {
+      enabled: !report && !!activeJobId,
+      queryKey: getGetReportQueryKey(activeJobId || ''),
+    }
   });
 
-  useEffect(() => { if (!report) setLocation('/'); }, [report, setLocation]);
   useEffect(() => {
-    if (chatHistory?.messages) {
-      setMessages(chatHistory.messages.map((m: { role: string; content: string }) => ({ role: m.role, content: m.content })));
+    if (fetchedReport && 'patientSummary' in fetchedReport) {
+      setReport(fetchedReport as ClinicalReport);
     }
-  }, [chatHistory]);
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  }, [fetchedReport, setReport]);
 
-  if (!report) return null;
+  useEffect(() => {
+    if (!report && !activeJobId) {
+      setLocation('/');
+    }
+  }, [report, activeJobId, setLocation]);
+
+  if (!report) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] gap-3">
+        <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+        <p className="text-gray-600 font-medium text-sm">Loading clinical report...</p>
+      </div>
+    );
+  }
 
   const downloadPdf = async () => {
     try {
