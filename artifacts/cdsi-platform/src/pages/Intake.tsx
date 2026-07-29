@@ -22,7 +22,7 @@ export default function Intake() {
   const startAnalysis = useStartAnalysis();
   const [errorMsg, setErrorMsg] = useState('');
 
-  const [analysisType, setAnalysisType] = useState<IntakeFormDataAnalysisType>('physical');
+  const [analysisType, setAnalysisType] = useState<IntakeFormDataAnalysisType | null>(null);
   
   // Physical State
   const [patientName, setPatientName] = useState('');
@@ -165,44 +165,38 @@ export default function Intake() {
       {/* Analysis Type */}
       <div className="flex flex-col gap-4">
         <h2 className="text-sm font-semibold text-[#111827] uppercase tracking-wider">Analysis Type</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex flex-wrap md:flex-nowrap gap-4">
           <button
             type="button"
             onClick={() => setAnalysisType('physical')}
-            className={`p-6 border rounded-xl flex flex-col items-center gap-3 transition-all ${
-              analysisType === 'physical' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
+            className={`flex items-center gap-3 px-6 py-4 border rounded-xl transition-all flex-1 justify-center ${
+              analysisType === 'physical' ? 'border-[#16A34A] bg-[#F0FDF4] text-[#16A34A] shadow-sm' : 'border-[#E5E7EB] bg-white text-[#6B7280] hover:border-[#D1D5DB] hover:bg-gray-50'
             }`}
           >
-            <div className={`p-3 rounded-full ${analysisType === 'physical' ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280]'}`}>
-              <Stethoscope className="w-6 h-6" />
-            </div>
-            <span className={`font-medium ${analysisType === 'physical' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Physical Health Only</span>
+            <Stethoscope className="w-5 h-5" />
+            <span className="font-semibold text-sm">Physical Health</span>
           </button>
           
           <button
             type="button"
             onClick={() => setAnalysisType('psychiatric')}
-            className={`p-6 border rounded-xl flex flex-col items-center gap-3 transition-all ${
-              analysisType === 'psychiatric' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
+            className={`flex items-center gap-3 px-6 py-4 border rounded-xl transition-all flex-1 justify-center ${
+              analysisType === 'psychiatric' ? 'border-[#16A34A] bg-[#F0FDF4] text-[#16A34A] shadow-sm' : 'border-[#E5E7EB] bg-white text-[#6B7280] hover:border-[#D1D5DB] hover:bg-gray-50'
             }`}
           >
-            <div className={`p-3 rounded-full ${analysisType === 'psychiatric' ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280]'}`}>
-              <Brain className="w-6 h-6" />
-            </div>
-            <span className={`font-medium ${analysisType === 'psychiatric' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Psychiatric Only</span>
+            <Brain className="w-5 h-5" />
+            <span className="font-semibold text-sm">Psychiatric</span>
           </button>
           
           <button
             type="button"
             onClick={() => setAnalysisType('both')}
-            className={`p-6 border rounded-xl flex flex-col items-center gap-3 transition-all ${
-              analysisType === 'both' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
+            className={`flex items-center gap-3 px-6 py-4 border rounded-xl transition-all flex-1 justify-center ${
+              analysisType === 'both' ? 'border-[#16A34A] bg-[#F0FDF4] text-[#16A34A] shadow-sm' : 'border-[#E5E7EB] bg-white text-[#6B7280] hover:border-[#D1D5DB] hover:bg-gray-50'
             }`}
           >
-            <div className={`p-3 rounded-full ${analysisType === 'both' ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280]'}`}>
-              <HeartPulse className="w-6 h-6" />
-            </div>
-            <span className={`font-medium ${analysisType === 'both' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Physical + Psychiatric</span>
+            <HeartPulse className="w-5 h-5" />
+            <span className="font-semibold text-sm">Both</span>
           </button>
         </div>
       </div>
