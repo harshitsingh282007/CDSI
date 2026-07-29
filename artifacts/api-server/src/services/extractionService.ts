@@ -440,18 +440,7 @@ export async function extractStructuredData(
   const dedupedPrescriptions = deduplicatePrescriptions(allPrescriptions);
   const patientInfo = extractPatientInfo(medicalContext);
 
-  // FAST PATH FOR DIGITAL REPORTS: Return immediately in <0.1s to avoid 90s sequential API loops & Render HTTP timeouts!
-  if (dedupedLabs.length >= 3 || dedupedPrescriptions.length >= 1) {
-    logger.info({ labCount: dedupedLabs.length, medCount: dedupedPrescriptions.length }, "Fast-path digital extraction completed in <0.1s");
-    return {
-      labParameters: dedupedLabs,
-      prescriptions: dedupedPrescriptions,
-      patientName: patientName || patientInfo.name,
-      patientAge: patientAge || patientInfo.age,
-      patientSex: patientSex || patientInfo.sex,
-      extractionErrors: errors,
-    };
-  }
+  // The AI Vision extraction will now run on all documents to ensure no labs are missed.
 
   const imagesList = pageImages ?? [];
   const textsList = (pageTexts && pageTexts.length > 0) ? pageTexts : splitTextIntoPages(medicalContext);
