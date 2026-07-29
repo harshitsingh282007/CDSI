@@ -16,7 +16,7 @@ export function getBmiCategory(bmiVal: number): { label: string; category: strin
 }
 
 export default function Intake() {
-  const { jobId, language } = useCDSI();
+  const { jobId, setJobId, language } = useCDSI();
   const [, setLocation] = useLocation();
   const startAnalysis = useStartAnalysis();
   const [errorMsg, setErrorMsg] = useState('');
@@ -178,8 +178,31 @@ export default function Intake() {
 
   const isFormValid = analysisType !== null;
 
-  const onSubmit = () => {
-    if (!analysisType || !jobId) return;
+  const onSubmit = async () => {
+    if (!analysisType) return;
+
+    let targetJobId = jobId;
+    if (!targetJobId) {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+        const res = await fetch(`${apiUrl}/api/upload`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: 'Intake Assessment', text: `Patient Intake Assessment (${analysisType})` }),
+        });
+        const data = await res.json();
+        if (data.jobId) {
+          targetJobId = data.jobId;
+          setJobId(targetJobId);
+        } else {
+          targetJobId = `job-intake-${Date.now()}`;
+          setJobId(targetJobId);
+        }
+      } catch (err) {
+        targetJobId = `job-intake-${Date.now()}`;
+        setJobId(targetJobId);
+      }
+    }
 
     const intakeData: IntakeFormData & { patientName?: string | null } = {
       analysisType,
@@ -209,7 +232,7 @@ export default function Intake() {
     };
 
     setErrorMsg('');
-    startAnalysis.mutate({ data: { jobId, intakeData, language } }, {
+    startAnalysis.mutate({ data: { jobId: targetJobId, intakeData, language } }, {
       onSuccess: () => {
         setLocation('/processing');
       },
@@ -777,11 +800,11 @@ export default function Intake() {
         <div className="w-full max-w-[1100px] flex justify-end">
           <button 
             onClick={onSubmit}
-            disabled={!isFormValid || startAnalysis.isPending || !jobId}
+            disabled={!isFormValid || startAnalysis.isPending}
             className={`px-8 py-3 rounded-md font-medium text-white transition-colors flex items-center gap-2 ${
-              (!isFormValid || !jobId) 
+              (!isFormValid) 
                 ? 'bg-[#E5E7EB] text-[#6B7280] cursor-not-allowed' 
-                : 'bg-[#16A34A] hover:bg-green-700 shadow-sm'
+                : 'bg-[#16A34A] hover:bg-green-700 shadow-sm cursor-pointer'
             }`}
           >
             {startAnalysis.isPending && (
