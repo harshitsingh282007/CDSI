@@ -363,7 +363,8 @@ Return strictly valid JSON matching the exact schema.`;
 export async function extractStructuredData(
   medicalContext: string,
   language = "English",
-  pageImages?: Buffer[]
+  pageImages?: Buffer[],
+  pageTexts?: string[]
 ): Promise<StructuredExtractionResult> {
   const errors: string[] = [];
 
@@ -373,60 +374,68 @@ export async function extractStructuredData(
   let patientAge: number | null = null;
   let patientSex: string | null = null;
 
-  // Layer 1: Multimodal AI Vision direct image extraction
-  if (pageImages && pageImages.length > 0) {
-    logger.info({ imageCount: pageImages.length }, "Running AI Multimodal Vision extraction on document images");
-    const visionRes = await extractVisionData(pageImages, language);
-    allLabs.push(...visionRes.labs);
-    allPrescriptions.push(...visionRes.prescriptions);
-  }
+  const imagesList = pageImages ?? [];
+  const textsList = pageTexts ?? [];
+  const totalPages = Math.max(imagesList.length, textsList.length);
 
-  // Layer 2: AI Text Chunking extraction
-  if (medicalContext.trim()) {
-    const MAX_CHARS = 12000;
-    const chunks: string[] = [];
-    if (medicalContext.length > MAX_CHARS) {
-      for (let i = 0; i < medicalContext.length; i += MAX_CHARS) {
-        chunks.push(medicalContext.slice(i, i + MAX_CHARS));
+  // Page-by-Page Extraction: Loops through EACH page individually to extract ALL labs & prescriptions
+  if (totalPages > 0) {
+    logger.info({ totalPages }, "Executing Page-by-Page AI Vision & Text Extraction");
+    for (let p = 0; p < totalPages; p++) {
+      const imgBuf = imagesList[p];
+      const textChunk = textsList[p] ?? "";
+
+      const prompt = `PAGE ${p + 1} OF ${totalPages} - EXHAUSTIVE MEDICAL DATA EXTRACTION.
+Analyze Page ${p + 1} of the patient's medical record (pathology report table or doctor prescription note).
+
+Extract EVERY SINGLE medical test parameter (name, value, unit, reference range, status) and EVERY SINGLE prescription item (medicine name, dosage, frequency, duration, route, special instructions) visible on Page ${p + 1}.
+
+Page Text Context:
+${textChunk}
+
+Return strictly valid JSON matching the exact schema.`;
+
+      try {
+        const response = await callAI("entity_extract", prompt, LAB_SYSTEM_PROMPT, {
+          language,
+          jsonMode: true,
+          images: imgBuf ? [imgBuf] : undefined,
+        });
+
+        if (response.content) {
+          const parsed = parseJsonFromText(response.content) as {
+            labParameters?: LabParameter[];
+            prescriptions?: PrescriptionItem[];
+            patientName?: string | null;
+            patientAge?: number | null;
+            patientSex?: string | null;
+          };
+          if (parsed.labParameters?.length) allLabs.push(...parsed.labParameters);
+          if (parsed.prescriptions?.length) allPrescriptions.push(...parsed.prescriptions);
+          if (!patientName && parsed.patientName) patientName = parsed.patientName;
+          if (!patientAge && parsed.patientAge) patientAge = parsed.patientAge;
+          if (!patientSex && parsed.patientSex) patientSex = parsed.patientSex;
+        }
+      } catch (err) {
+        logger.warn({ err, page: p + 1 }, "Page-by-page AI extraction error");
       }
-    } else {
-      chunks.push(medicalContext);
-    }
 
-    for (const chunkResults of await extractChunksParallel(chunks, language, errors)) {
-      allLabs.push(...chunkResults.labs);
-      allPrescriptions.push(...chunkResults.prescriptions);
-      if (!patientName && chunkResults.patientName) patientName = chunkResults.patientName;
-      if (!patientAge && chunkResults.patientAge) patientAge = chunkResults.patientAge;
-      if (!patientSex && chunkResults.patientSex) patientSex = chunkResults.patientSex;
+      // Page-level deterministic parsers
+      if (textChunk) {
+        allLabs.push(...extractGenericTableLabs(textChunk));
+        allLabs.push(...extractLabsRegex(textChunk));
+        allPrescriptions.push(...extractGenericPrescriptions(textChunk));
+        allPrescriptions.push(...extractPrescriptionsRegex(textChunk));
+      }
     }
   }
 
-  // Layer 3: Generic Line Table Parser
-  const genericLabs = extractGenericTableLabs(medicalContext);
-  if (genericLabs.length > 0) {
-    logger.info({ count: genericLabs.length }, "Extracted labs via generic table parser");
-    allLabs.push(...genericLabs);
-  }
-
-  // Layer 4: Regex Lab Parser
-  const regexLabs = extractLabsRegex(medicalContext);
-  if (regexLabs.length > 0) {
-    logger.info({ count: regexLabs.length }, "Extracted labs via regex parser");
-    allLabs.push(...regexLabs);
-  }
-
-  // Layer 5: Prescription Line & Pattern Parsers
-  const genericMeds = extractGenericPrescriptions(medicalContext);
-  if (genericMeds.length > 0) {
-    logger.info({ count: genericMeds.length }, "Extracted prescriptions via generic line parser");
-    allPrescriptions.push(...genericMeds);
-  }
-
-  const regexMeds = extractPrescriptionsRegex(medicalContext);
-  if (regexMeds.length > 0) {
-    logger.info({ count: regexMeds.length }, "Extracted prescriptions via regex parser");
-    allPrescriptions.push(...regexMeds);
+  // Document-wide fallback pass
+  if (medicalContext.trim()) {
+    allLabs.push(...extractGenericTableLabs(medicalContext));
+    allLabs.push(...extractLabsRegex(medicalContext));
+    allPrescriptions.push(...extractGenericPrescriptions(medicalContext));
+    allPrescriptions.push(...extractPrescriptionsRegex(medicalContext));
   }
 
   const patientInfo = extractPatientInfo(medicalContext);

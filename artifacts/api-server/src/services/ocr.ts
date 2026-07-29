@@ -8,6 +8,8 @@ export interface OcrResult {
   confidence?: number;
   lowQuality?: boolean;
   docAnnotation: string;
+  pageImages?: Buffer[];
+  pageTexts?: string[];
 }
 
 // Raw regex-based PDF text extraction fallback for text PDFs
@@ -130,6 +132,7 @@ async function ocrPdfPages(filePath: string, fileName: string, pageCount: number
     if (embeddedImages.length > 0) {
       logger.info({ count: embeddedImages.length, fileName }, "Extracted embedded page images from scanned PDF via pure JS");
       let fullText = "";
+      const pageTexts: string[] = [];
       const Tesseract = await import("tesseract.js");
       const worker = await Tesseract.createWorker("eng");
 
@@ -137,8 +140,10 @@ async function ocrPdfPages(filePath: string, fileName: string, pageCount: number
         try {
           const imgBuf = embeddedImages[i];
           const { data } = await worker.recognize(imgBuf);
+          const pText = `[DOC: ${fileName} | PAGE: ${i + 1}]\n${data.text}\n\n`;
+          pageTexts.push(pText);
           if (data.text.trim().length > 0) {
-            fullText += `[DOC: ${fileName} | PAGE: ${i + 1}]\n${data.text}\n\n`;
+            fullText += pText;
           }
         } catch (e) {
           logger.warn({ e, page: i + 1, fileName }, "Embedded page image OCR failed");
@@ -147,7 +152,13 @@ async function ocrPdfPages(filePath: string, fileName: string, pageCount: number
       await worker.terminate();
 
       if (fullText.trim().length > 30) {
-        return { text: fullText, pageCount: Math.max(embeddedImages.length, pageCount), docAnnotation: `[DOC: ${fileName}]` };
+        return {
+          text: fullText,
+          pageCount: Math.max(embeddedImages.length, pageCount),
+          docAnnotation: `[DOC: ${fileName}]`,
+          pageImages: embeddedImages,
+          pageTexts,
+        };
       }
     }
   } catch (err) {
@@ -276,12 +287,18 @@ async function extractImageText(filePath: string, fileName: string): Promise<Ocr
     }
 
     const confidence = data.confidence ?? 0;
+    const pageText = `[DOC: ${fileName} | PAGE: 1]\n${data.text}\n\n`;
+    let rawBuf: Buffer | undefined;
+    try { rawBuf = fs.readFileSync(filePath); } catch { /* ignore */ }
+
     return {
-      text: `[DOC: ${fileName} | PAGE: 1]\n${data.text}\n\n`,
+      text: pageText,
       pageCount: 1,
       confidence,
       lowQuality: confidence < 60,
       docAnnotation: `[DOC: ${fileName}]`,
+      pageImages: rawBuf ? [rawBuf] : undefined,
+      pageTexts: [pageText],
     };
   } catch (e) {
     logger.error({ e, fileName }, "Image OCR failed");
@@ -311,16 +328,31 @@ export async function processFile(
 
 export async function processAllFiles(
   files: Array<{ path: string; originalName: string; mimetype: string }>
-): Promise<{ unifiedContext: string; fileSummaries: Array<{ name: string; pageCount: number; lowQuality?: boolean }> }> {
+): Promise<{
+  unifiedContext: string;
+  fileSummaries: Array<{ name: string; pageCount: number; lowQuality?: boolean }>;
+  pageImages: Buffer[];
+  pageTexts: string[];
+}> {
   const results: OcrResult[] = [];
   const fileSummaries: Array<{ name: string; pageCount: number; lowQuality?: boolean }> = [];
+  const pageImages: Buffer[] = [];
+  const pageTexts: string[] = [];
 
   for (const file of files) {
     const result = await processFile(file.path, file.originalName, file.mimetype);
     results.push(result);
+    if (result.pageImages && result.pageImages.length > 0) {
+      pageImages.push(...result.pageImages);
+    }
+    if (result.pageTexts && result.pageTexts.length > 0) {
+      pageTexts.push(...result.pageTexts);
+    } else if (result.text) {
+      pageTexts.push(result.text);
+    }
     fileSummaries.push({ name: file.originalName, pageCount: result.pageCount, lowQuality: result.lowQuality });
   }
 
   const unifiedContext = results.map((r) => r.text).join("\n---\n\n");
-  return { unifiedContext, fileSummaries };
+  return { unifiedContext, fileSummaries, pageImages, pageTexts };
 }
