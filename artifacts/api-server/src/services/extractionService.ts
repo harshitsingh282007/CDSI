@@ -404,31 +404,36 @@ Return strictly valid JSON matching the exact schema.`;
 function splitTextIntoPages(text: string): string[] {
   if (!text.trim()) return [];
 
-  // 1. Split by explicit [DOC: ... | PAGE: N] markers
-  const docPageSplit = text.split(/(?=\[DOC:[^\]]+?\| PAGE:\s*\d+\])/i).filter((p) => p.trim().length > 0);
-  if (docPageSplit.length > 1) {
-    return docPageSplit;
+  // 1. Split on [DOC: ... | PAGE: N] header markers cleanly
+  const pageBlocks = text
+    .split(/\[DOC:[^\]]+?\|\s*PAGE:\s*\d+\]/i)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 20);
+
+  if (pageBlocks.length > 1) {
+    return pageBlocks;
   }
 
-  // 2. Split by form feed \f
-  const ffSplit = text.split("\f").filter((p) => p.trim().length > 0);
-  if (ffSplit.length > 1) {
-    return ffSplit;
+  // 2. Split on form feed \f
+  const ffBlocks = text
+    .split("\f")
+    .map((p) => p.trim())
+    .filter((p) => p.length > 20);
+
+  if (ffBlocks.length > 1) {
+    return ffBlocks;
   }
 
-  // 3. Split by Page N or section dividers
-  const pageMarkerSplit = text.split(/(?=\bPage\s+\d+\b|\-\-\-\s*Page|\b[0-9]+\s+of\s+[0-9]+\b)/i).filter((p) => p.trim().length > 0);
-  if (pageMarkerSplit.length > 1) {
-    return pageMarkerSplit;
-  }
-
-  // 4. Fallback: Slice every 3000 chars into page blocks
+  // 3. Fallback: Slice every 3500 characters into page blocks
   const chunks: string[] = [];
-  const chunkSize = 3000;
+  const chunkSize = 3500;
   for (let i = 0; i < text.length; i += chunkSize) {
-    chunks.push(text.slice(i, i + chunkSize));
+    const chunk = text.slice(i, i + chunkSize).trim();
+    if (chunk.length > 20) {
+      chunks.push(chunk);
+    }
   }
-  return chunks;
+  return chunks.length > 0 ? chunks : [text];
 }
 
 export async function extractStructuredData(
@@ -445,11 +450,20 @@ export async function extractStructuredData(
   let patientAge: number | null = null;
   let patientSex: string | null = null;
 
+  // Layer 1: ALWAYS run document-wide deterministic parsers first to guarantee immediate baseline extraction
+  if (medicalContext.trim()) {
+    allLabs.push(...extractGenericTableLabs(medicalContext));
+    allLabs.push(...extractLabsRegex(medicalContext));
+    allPrescriptions.push(...extractGenericPrescriptions(medicalContext));
+    allPrescriptions.push(...extractIndianPrescriptions(medicalContext));
+    allPrescriptions.push(...extractPrescriptionsRegex(medicalContext));
+  }
+
   const imagesList = pageImages ?? [];
   const textsList = (pageTexts && pageTexts.length > 0) ? pageTexts : splitTextIntoPages(medicalContext);
   const totalPages = Math.max(imagesList.length, textsList.length);
 
-  logger.info({ totalPages, imageCount: imagesList.length, textPageCount: textsList.length }, "Executing Page-by-Page AI Vision & Text Extraction");
+  logger.info({ totalPages, imageCount: imagesList.length, textPageCount: textsList.length, baselineLabs: allLabs.length, baselineMeds: allPrescriptions.length }, "Executing Page-by-Page AI Vision & Text Extraction");
 
   // Page-by-Page Extraction: Loops through EACH page individually to extract ALL labs & prescriptions
   if (totalPages > 0) {
