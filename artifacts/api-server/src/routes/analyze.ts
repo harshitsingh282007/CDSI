@@ -114,7 +114,7 @@ router.post("/analyze", async (req: Request, res: Response) => {
 
         const extractionStart = Date.now();
         const { labParameters, prescriptions, patientName, patientAge, patientSex, extractionErrors } =
-          await extractStructuredData(job.medicalContext!, language);
+          await extractStructuredData(job.medicalContext!, language, (job as any).images);
         stageTimings.extraction = Date.now() - extractionStart;
 
         updateJob(jobId, {

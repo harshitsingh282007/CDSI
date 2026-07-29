@@ -284,25 +284,49 @@ function deduplicatePrescriptions(meds: PrescriptionItem[]): PrescriptionItem[] 
   return Array.from(seen.values());
 }
 
+async function extractVisionData(
+  pageImages: Buffer[],
+  language: string
+): Promise<{ labs: LabParameter[]; prescriptions: PrescriptionItem[] }> {
+  if (!pageImages || pageImages.length === 0) return { labs: [], prescriptions: [] };
+
+  const prompt = `EXHAUSTIVE MULTIMODAL MEDICAL VISION EXTRACTION.
+Examine all attached medical document page images (pathology lab report tables, blood test panels, doctor prescriptions, handwritten notes).
+
+Extract EVERY SINGLE medical test parameter (name, value, unit, reference range, status) and EVERY SINGLE prescription item (medicine name, dosage, frequency, duration, route, special instructions) across all pages.
+
+Return strictly valid JSON matching the exact schema.`;
+
+  try {
+    const response = await callAI("entity_extract", prompt, LAB_SYSTEM_PROMPT, {
+      language,
+      jsonMode: true,
+      images: pageImages,
+    });
+
+    if (response.content) {
+      const parsed = parseJsonFromText(response.content) as {
+        labParameters?: LabParameter[];
+        prescriptions?: PrescriptionItem[];
+      };
+      return {
+        labs: parsed.labParameters ?? [],
+        prescriptions: parsed.prescriptions ?? [],
+      };
+    }
+  } catch (err) {
+    logger.warn({ err }, "AI Vision extraction call failed");
+  }
+
+  return { labs: [], prescriptions: [] };
+}
+
 export async function extractStructuredData(
   medicalContext: string,
-  language = "English"
+  language = "English",
+  pageImages?: Buffer[]
 ): Promise<StructuredExtractionResult> {
   const errors: string[] = [];
-
-  if (!medicalContext.trim()) {
-    return { labParameters: [], prescriptions: [], patientName: null, patientAge: null, patientSex: null, extractionErrors: ["No medical context provided"] };
-  }
-
-  const MAX_CHARS = 12000;
-  const chunks: string[] = [];
-  if (medicalContext.length > MAX_CHARS) {
-    for (let i = 0; i < medicalContext.length; i += MAX_CHARS) {
-      chunks.push(medicalContext.slice(i, i + MAX_CHARS));
-    }
-  } else {
-    chunks.push(medicalContext);
-  }
 
   const allLabs: LabParameter[] = [];
   const allPrescriptions: PrescriptionItem[] = [];
@@ -310,30 +334,53 @@ export async function extractStructuredData(
   let patientAge: number | null = null;
   let patientSex: string | null = null;
 
-  for (const chunkResults of await extractChunksParallel(chunks, language, errors)) {
-    allLabs.push(...chunkResults.labs);
-    allPrescriptions.push(...chunkResults.prescriptions);
-    if (!patientName && chunkResults.patientName) patientName = chunkResults.patientName;
-    if (!patientAge && chunkResults.patientAge) patientAge = chunkResults.patientAge;
-    if (!patientSex && chunkResults.patientSex) patientSex = chunkResults.patientSex;
+  // Layer 1: Multimodal AI Vision direct image extraction
+  if (pageImages && pageImages.length > 0) {
+    logger.info({ imageCount: pageImages.length }, "Running AI Multimodal Vision extraction on document images");
+    const visionRes = await extractVisionData(pageImages, language);
+    allLabs.push(...visionRes.labs);
+    allPrescriptions.push(...visionRes.prescriptions);
   }
 
-  // Double check layer: ALWAYS run generic line table parser & regex fallbacks to catch any missing labs/prescriptions
+  // Layer 2: AI Text Chunking extraction
+  if (medicalContext.trim()) {
+    const MAX_CHARS = 12000;
+    const chunks: string[] = [];
+    if (medicalContext.length > MAX_CHARS) {
+      for (let i = 0; i < medicalContext.length; i += MAX_CHARS) {
+        chunks.push(medicalContext.slice(i, i + MAX_CHARS));
+      }
+    } else {
+      chunks.push(medicalContext);
+    }
+
+    for (const chunkResults of await extractChunksParallel(chunks, language, errors)) {
+      allLabs.push(...chunkResults.labs);
+      allPrescriptions.push(...chunkResults.prescriptions);
+      if (!patientName && chunkResults.patientName) patientName = chunkResults.patientName;
+      if (!patientAge && chunkResults.patientAge) patientAge = chunkResults.patientAge;
+      if (!patientSex && chunkResults.patientSex) patientSex = chunkResults.patientSex;
+    }
+  }
+
+  // Layer 3: Generic Line Table Parser
   const genericLabs = extractGenericTableLabs(medicalContext);
   if (genericLabs.length > 0) {
-    logger.info({ count: genericLabs.length }, "Extracted labs via generic table parser 2nd check");
+    logger.info({ count: genericLabs.length }, "Extracted labs via generic table parser");
     allLabs.push(...genericLabs);
   }
 
+  // Layer 4: Regex Lab Parser
   const regexLabs = extractLabsRegex(medicalContext);
   if (regexLabs.length > 0) {
-    logger.info({ count: regexLabs.length }, "Extracted labs via regex parser 2nd check");
+    logger.info({ count: regexLabs.length }, "Extracted labs via regex parser");
     allLabs.push(...regexLabs);
   }
 
+  // Layer 5: Regex Prescription Parser
   const regexMeds = extractPrescriptionsRegex(medicalContext);
   if (regexMeds.length > 0) {
-    logger.info({ count: regexMeds.length }, "Extracted prescriptions via regex 2nd check");
+    logger.info({ count: regexMeds.length }, "Extracted prescriptions via regex parser");
     allPrescriptions.push(...regexMeds);
   }
 

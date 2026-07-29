@@ -138,7 +138,8 @@ async function callProvider(
   jsonMode: boolean,
   overrideModel?: string,
   overrideApiKey?: string,
-  overrideBaseUrl?: string
+  overrideBaseUrl?: string,
+  images?: Buffer[]
 ): Promise<AIResponse> {
   const { apiKey: defaultApiKey, baseUrl: defaultBaseUrl, model: defaultConfiguredModel } = getAIConfig();
   const apiKey = overrideApiKey || defaultApiKey;
@@ -163,7 +164,7 @@ async function callProvider(
       if (!modelsToTry.includes(m)) modelsToTry.push(m);
     }
   } else if (baseUrl.includes("open.bigmodel.cn")) {
-    for (const m of ["glm-4-flash", "glm-4-air", "glm-4"]) {
+    for (const m of ["glm-4-flash", "glm-4-air", "glm-4", "glm-4v"]) {
       if (!modelsToTry.includes(m)) modelsToTry.push(m);
     }
   } else if (baseUrl.includes("nvidia.com")) {
@@ -174,6 +175,20 @@ async function callProvider(
     for (const m of ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "llama3-70b-8192", "mixtral-8x7b-32768"]) {
       if (!modelsToTry.includes(m)) modelsToTry.push(m);
     }
+  }
+
+  let userContent: unknown = prompt;
+  if (images && images.length > 0) {
+    const parts: Array<{ type: string; text?: string; image_url?: { url: string } }> = [{ type: "text", text: prompt }];
+    images.slice(0, 10).forEach((imgBuf) => {
+      parts.push({
+        type: "image_url",
+        image_url: {
+          url: `data:image/jpeg;base64,${imgBuf.toString("base64")}`,
+        },
+      });
+    });
+    userContent = parts;
   }
 
   let lastError = "";
@@ -192,7 +207,7 @@ async function callProvider(
             body: JSON.stringify({
               model: currentModel,
               messages: withSystemPrompt(systemPrompt, languageInstruction(language), [
-                { role: "user", content: prompt },
+                { role: "user", content: userContent as string },
               ]),
               temperature: jsonMode ? 0.1 : 0.3,
               max_tokens: 4096,
@@ -311,12 +326,12 @@ export async function callAI(
   stage: PipelineStage,
   prompt: string,
   systemPrompt: string,
-  options?: { language?: string; jsonMode?: boolean }
+  options?: { language?: string; jsonMode?: boolean; images?: Buffer[] }
 ): Promise<AIResponse> {
   const language = options?.language ?? "English";
   const jsonMode = options?.jsonMode ?? false;
 
   const { apiKey, baseUrl, model } = getAIConfigForStage(stage);
 
-  return callProvider(prompt, systemPrompt, language, jsonMode, model, apiKey, baseUrl);
+  return callProvider(prompt, systemPrompt, language, jsonMode, model, apiKey, baseUrl, options?.images);
 }

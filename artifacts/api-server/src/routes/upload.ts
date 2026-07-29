@@ -112,7 +112,7 @@ router.post("/upload", upload.array("files", 20), async (req: Request, res: Resp
           mimetype: f.mimetype,
         }));
 
-        const { unifiedContext, fileSummaries } = await processAllFiles(fileInputs);
+        const { unifiedContext, fileSummaries, pageImages } = await processAllFiles(fileInputs);
 
         updateJob(jobId, {
           status: "ready",
@@ -120,6 +120,7 @@ router.post("/upload", upload.array("files", 20), async (req: Request, res: Resp
           progress: 50,
           message: "Text extraction complete. Ready for intake.",
           medicalContext: unifiedContext,
+          images: pageImages,
           files: fileSummaries.map((s, i) => ({
             originalName: sanitizeFilename(s.name),
             mimetype: validFiles[i]?.mimetype ?? "",
