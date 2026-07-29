@@ -48,6 +48,11 @@ export default function Intake() {
   const [phq9Answers, setPhq9Answers] = useState<number[]>(Array(9).fill(-1));
   const [gad7Answers, setGad7Answers] = useState<number[]>(Array(7).fill(-1));
   const [sleepQuality, setSleepQuality] = useState('5');
+  const [appetiteChanges, setAppetiteChanges] = useState('Normal');
+  const [lifeStressors, setLifeStressors] = useState(false);
+  const [lifeStressorsDetails, setLifeStressorsDetails] = useState('');
+  const [previousMentalHealthDiagnosis, setPreviousMentalHealthDiagnosis] = useState(false);
+  const [mentalHealthDiagnosisDetails, setMentalHealthDiagnosisDetails] = useState('');
   // Adaptive AI State
   const [isGeneratingAdaptive, setIsGeneratingAdaptive] = useState(false);
   const [adaptiveQuestions, setAdaptiveQuestions] = useState<string[]>([]);
@@ -302,8 +307,8 @@ export default function Intake() {
               analysisType === 'both' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm ring-2 ring-[#16A34A]' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
             }`}
           >
-            <div className={`p-3 rounded-full ${analysisType === 'both' ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280]'}`}>
-              <Heart className="w-6 h-6 text-red-500 fill-red-500/20" />
+            <div className={`p-3 rounded-full flex items-center justify-center w-12 h-12 ${analysisType === 'both' ? 'bg-[#DCFCE7]' : 'bg-[#FAFAFA]'}`}>
+              <span className="text-2xl leading-none">❤️</span>
             </div>
             <div>
               <span className={`font-semibold text-sm block ${analysisType === 'both' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Physical + Psychiatric</span>

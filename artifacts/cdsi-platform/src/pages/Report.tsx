@@ -424,7 +424,7 @@ export default function Report() {
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = `CDSI_Report_${report.patientSummary.name || 'Patient'}.pdf`;
+      a.href = url; a.download = `CDSI_Report_${report.patientSummary?.name || 'Patient'}.pdf`;
       a.click(); URL.revokeObjectURL(url);
     } catch (err) { console.error('PDF export failed', err); }
   };
@@ -540,14 +540,14 @@ export default function Report() {
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pb-5 border-b border-gray-200">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            {(report.patientSummary.name || 'Anonymous Patient').replace(/\s+(weight|height|age|sex|patient|id)$/i, '').trim()}
+            {(report.patientSummary?.name || 'Anonymous Patient').replace(/\s+(weight|height|age|sex|patient|id)$/i, '').trim()}
           </h1>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2 text-gray-600 text-sm font-medium">
-            {report.patientSummary.age && <span>{report.patientSummary.age} years</span>}
-            {report.patientSummary.sex && <><span>·</span><span className="capitalize">{report.patientSummary.sex}</span></>}
+            {report.patientSummary?.age && <span>{report.patientSummary.age} years</span>}
+            {report.patientSummary?.sex && <><span>·</span><span className="capitalize">{report.patientSummary.sex}</span></>}
             <span>·</span>
-            <span>{new Date(report.patientSummary.dateOfAnalysis).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-            {report.patientSummary.bmi && (
+            <span>{new Date(report.patientSummary?.dateOfAnalysis || Date.now()).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+            {report.patientSummary?.bmi && (
               <>
                 <span>·</span>
                 <span className={`font-semibold px-2.5 py-0.5 rounded-md border shadow-sm ${getBmiCategory(report.patientSummary.bmi).badgeBg}`}>
@@ -556,7 +556,7 @@ export default function Report() {
               </>
             )}
             <span className="ml-1 px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-gray-100 text-gray-700 border border-gray-200">
-              {report.patientSummary.analysisType}
+              {report.patientSummary?.analysisType || 'N/A'}
             </span>
           </div>
           <p className="text-xs italic text-gray-400 mt-2">AI-generated decision support only. Always verify with a licensed physician.</p>
