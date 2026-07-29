@@ -4,6 +4,7 @@ import { Stethoscope, Brain, Heart, HeartPulse, Check, AlertTriangle, Sparkles, 
 import { useCDSI } from '../context/CDSIContext';
 import { useStartAnalysis, type IntakeFormData, type IntakeFormDataAnalysisType } from '@workspace/api-client-react';
 import { PHQ9_QUESTIONS, GAD7_QUESTIONS } from '../translations';
+import { getApiUrl } from '../lib/api-url';
 
 export function getBmiCategory(bmiVal: number): { label: string; category: string; badgeBg: string } {
   if (bmiVal < 16.0) return { label: "Very Low", category: "Severe Underweight", badgeBg: "bg-red-100 border-red-300 text-red-800" };
@@ -57,7 +58,7 @@ export default function Intake() {
   const runAdaptiveAiTriage = async () => {
     setIsGeneratingAdaptive(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const apiUrl = getApiUrl();
       if (jobId) {
         const res = await fetch(`${apiUrl}/api/chat`, {
           method: 'POST',
@@ -223,7 +224,7 @@ export default function Intake() {
     };
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const apiUrl = getApiUrl();
       const res = await fetch(`${apiUrl}/api/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

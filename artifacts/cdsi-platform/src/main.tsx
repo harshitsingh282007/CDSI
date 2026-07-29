@@ -5,8 +5,9 @@ import { setBaseUrl } from '@workspace/api-client-react';
 
 import './index.css';
 
+import { getApiUrl } from './lib/api-url';
+
 // Set API base URL for production
-const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-setBaseUrl(apiUrl);
+setBaseUrl(getApiUrl());
 
 createRoot(document.getElementById('root')!).render(<App />);

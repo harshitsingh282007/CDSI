@@ -61,12 +61,18 @@ function isUrl(input: RequestInfo | URL): input is URL {
 }
 
 function applyBaseUrl(input: RequestInfo | URL): RequestInfo | URL {
-  if (!_baseUrl) return input;
+  let baseUrl = _baseUrl;
+  if (!baseUrl || baseUrl.includes('localhost')) {
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      baseUrl = 'https://cdsi-3kq1.onrender.com';
+    }
+  }
+  if (!baseUrl) return input;
   const url = resolveUrl(input);
   // Only prepend to relative paths (starting with /)
   if (!url.startsWith("/")) return input;
 
-  const absolute = `${_baseUrl}${url}`;
+  const absolute = `${baseUrl.replace(/\/+$/, "")}${url}`;
   if (typeof input === "string") return absolute;
   if (isUrl(input)) return new URL(absolute);
   return new Request(absolute, input as Request);

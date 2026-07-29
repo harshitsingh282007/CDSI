@@ -4,6 +4,8 @@ import { UploadCloud, Camera, FileText, Image as ImageIcon, X, AlertTriangle, Ed
 import { useCDSI } from '../context/CDSIContext';
 import { useGetJobStatus, getGetJobStatusQueryKey } from '@workspace/api-client-react';
 
+import { getApiUrl } from '../lib/api-url';
+
 export default function Upload() {
   const { files, setFiles, setJobId, jobId } = useCDSI();
   const [, setLocation] = useLocation();
@@ -33,7 +35,7 @@ export default function Upload() {
     fileList.forEach(f => formData.append('files', f.file));
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const apiUrl = getApiUrl();
       const res = await fetch(`${apiUrl}/api/upload`, { method: 'POST', body: formData });
       if (!res.ok) throw new Error('Upload failed');
       const data = await res.json();
