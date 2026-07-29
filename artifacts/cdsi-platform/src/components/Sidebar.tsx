@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'wouter';
-import { UploadCloud, Activity, FileText, MessageSquare, Settings, Menu, X } from 'lucide-react';
+import { UploadCloud, Activity, FileText, MessageSquare, Settings, Menu, X, LogIn } from 'lucide-react';
 import { useState } from 'react';
 import { t } from '../translations';
 import { useCDSI } from '../context/CDSIContext';
@@ -14,6 +14,7 @@ export function Sidebar() {
     { href: '/intake', icon: Activity, label: t('analysis', language) },
     { href: '/report', icon: FileText, label: t('report', language) },
     { href: '/settings', icon: Settings, label: t('settings', language) },
+    { href: '/login', icon: LogIn, label: 'Login / Auth' },
   ];
 
   const isActive = (href: string) => {
