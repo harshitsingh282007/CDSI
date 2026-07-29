@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npx pnpm@10.34.5 --filter @workspace/cdsi-platform build",
+  "buildCommand": "pnpm --filter @workspace/cdsi-platform build",
   "outputDirectory": "artifacts/cdsi-platform/dist/public",
   "rewrites": [
     {
