@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useLocation } from 'wouter';
-import { Stethoscope, Brain, AlertTriangle } from 'lucide-react';
+import { Stethoscope, Brain, HeartPulse, AlertTriangle } from 'lucide-react';
 import { useCDSI } from '../context/CDSIContext';
 import { useStartAnalysis, type IntakeFormData, type IntakeFormDataAnalysisType } from '@workspace/api-client-react';
 import { PHQ9_QUESTIONS, GAD7_QUESTIONS } from '../translations';
@@ -33,14 +33,14 @@ export default function Intake() {
   const [heightCm, setHeightCm] = useState('');
   const [weightKg, setWeightKg] = useState('');
   
-  const [knownDiagnoses, setKnownDiagnoses] = useState<string[]>([]);
+  const [knownDiagnoses, setKnownDiagnoses] = useState('');
   const [currentMedications, setCurrentMedications] = useState('');
   const [knownAllergies, setKnownAllergies] = useState('');
   
   const [recentSurgeries, setRecentSurgeries] = useState(false);
   const [recentSurgeriesDetails, setRecentSurgeriesDetails] = useState('');
   
-  const [familyHistory, setFamilyHistory] = useState<string[]>([]);
+  const [familyHistory, setFamilyHistory] = useState('');
   const [smoking, setSmoking] = useState('Never');
   const [alcohol, setAlcohol] = useState('None');
 
@@ -108,12 +108,12 @@ export default function Intake() {
       biologicalSex: biologicalSex || null,
       heightCm: heightCm ? parseFloat(heightCm) : null,
       weightKg: weightKg ? parseFloat(weightKg) : null,
-      knownDiagnoses: knownDiagnoses.length > 0 ? knownDiagnoses : undefined,
+      knownDiagnoses: knownDiagnoses.trim() ? knownDiagnoses.split(',').map(s => s.trim()).filter(Boolean) : undefined,
       currentMedications: currentMedications || null,
       knownAllergies: knownAllergies || null,
       recentSurgeries,
       recentSurgeriesDetails: recentSurgeries ? recentSurgeriesDetails : null,
-      familyHistory: familyHistory.length > 0 ? familyHistory : undefined,
+      familyHistory: familyHistory.trim() ? familyHistory.split(',').map(s => s.trim()).filter(Boolean) : undefined,
       smoking,
       alcohol,
       phq9Answers: phq9Answers.some(a => a > -1) ? phq9Answers.map(a => a === -1 ? 0 : a) : undefined,
@@ -161,6 +161,51 @@ export default function Intake() {
           <span className="text-sm font-medium">{errorMsg}</span>
         </div>
       )}
+
+      {/* Analysis Type */}
+      <div className="flex flex-col gap-4">
+        <h2 className="text-sm font-semibold text-[#111827] uppercase tracking-wider">Analysis Type</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button
+            type="button"
+            onClick={() => setAnalysisType('physical')}
+            className={`p-6 border rounded-xl flex flex-col items-center gap-3 transition-all ${
+              analysisType === 'physical' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
+            }`}
+          >
+            <div className={`p-3 rounded-full ${analysisType === 'physical' ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280]'}`}>
+              <Stethoscope className="w-6 h-6" />
+            </div>
+            <span className={`font-medium ${analysisType === 'physical' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Physical Health Only</span>
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => setAnalysisType('psychiatric')}
+            className={`p-6 border rounded-xl flex flex-col items-center gap-3 transition-all ${
+              analysisType === 'psychiatric' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
+            }`}
+          >
+            <div className={`p-3 rounded-full ${analysisType === 'psychiatric' ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280]'}`}>
+              <Brain className="w-6 h-6" />
+            </div>
+            <span className={`font-medium ${analysisType === 'psychiatric' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Psychiatric Only</span>
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => setAnalysisType('both')}
+            className={`p-6 border rounded-xl flex flex-col items-center gap-3 transition-all ${
+              analysisType === 'both' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
+            }`}
+          >
+            <div className={`p-3 rounded-full ${analysisType === 'both' ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280]'}`}>
+              <HeartPulse className="w-6 h-6" />
+            </div>
+            <span className={`font-medium ${analysisType === 'both' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Physical + Psychiatric</span>
+          </button>
+        </div>
+      </div>
 
       {/* Forms */}
       <div className="flex flex-col gap-10">
@@ -269,19 +314,13 @@ export default function Intake() {
 
                 <div>
                   <label className="block text-sm font-medium text-[#111827] mb-2">Known Diagnoses</label>
-                  <div className="flex flex-wrap gap-2">
-                    {['Diabetes T1', 'Diabetes T2', 'Hypertension', 'Hypothyroidism', 'Hyperthyroidism', 'Asthma', 'COPD', 'CKD', 'CAD', 'Epilepsy', 'None', 'Other'].map(chip => (
-                      <button
-                        key={chip}
-                        onClick={() => toggleArrayItem(setKnownDiagnoses, chip)}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${
-                          knownDiagnoses.includes(chip) ? 'bg-[#DCFCE7] text-[#16A34A] border-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280] border-[#E5E7EB] hover:bg-white hover:border-[#D1D5DB]'
-                        }`}
-                      >
-                        {chip}
-                      </button>
-                    ))}
-                  </div>
+                  <input 
+                    type="text"
+                    value={knownDiagnoses}
+                    onChange={e => setKnownDiagnoses(e.target.value)}
+                    placeholder="e.g. Hypertension, Diabetes (comma separated)"
+                    className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#16A34A]"
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -334,19 +373,13 @@ export default function Intake() {
 
                 <div>
                   <label className="block text-sm font-medium text-[#111827] mb-2">Family History</label>
-                  <div className="flex flex-wrap gap-2">
-                    {['Diabetes', 'Hypertension', 'Cancer', 'Heart disease', 'Stroke', 'None'].map(chip => (
-                      <button
-                        key={chip}
-                        onClick={() => toggleArrayItem(setFamilyHistory, chip)}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${
-                          familyHistory.includes(chip) ? 'bg-[#DCFCE7] text-[#16A34A] border-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280] border-[#E5E7EB] hover:bg-white hover:border-[#D1D5DB]'
-                        }`}
-                      >
-                        {chip}
-                      </button>
-                    ))}
-                  </div>
+                  <input 
+                    type="text"
+                    value={familyHistory}
+                    onChange={e => setFamilyHistory(e.target.value)}
+                    placeholder="e.g. Heart disease, Diabetes (comma separated)"
+                    className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#16A34A]"
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
