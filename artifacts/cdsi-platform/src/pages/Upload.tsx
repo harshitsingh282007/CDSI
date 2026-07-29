@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useLocation } from 'wouter';
-import { UploadCloud, Camera, FileText, Image as ImageIcon, X, AlertTriangle, Edit2, Check } from 'lucide-react';
+import { UploadCloud, Camera, FileText, Image as ImageIcon, X, AlertTriangle, Edit2, Check, CheckCircle2, Sparkles } from 'lucide-react';
 import { useCDSI } from '../context/CDSIContext';
 import { useGetJobStatus, getGetJobStatusQueryKey } from '@workspace/api-client-react';
 
@@ -114,6 +114,27 @@ export default function Upload() {
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-semibold text-[#111827]">Upload Documents</h1>
         <p className="text-[#6B7280]">Upload patient medical reports, lab results, and clinical notes.</p>
+      </div>
+
+      {/* Fully Digital Supported Banner */}
+      <div className="p-4 bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 border border-emerald-200/80 rounded-xl flex items-start gap-3.5 shadow-sm">
+        <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-600 flex-shrink-0 mt-0.5">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-emerald-950 text-sm">Fully Digital Medical Reports Supported</span>
+            <span className="px-2 py-0.5 bg-emerald-600 text-white text-[10px] font-bold rounded-full uppercase tracking-wider">Active</span>
+            <span className="px-2 py-0.5 bg-amber-500/15 text-amber-800 text-[10px] font-semibold rounded-full border border-amber-300/60 flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-amber-600" />
+              Advanced Handwritten AI Vision OCR Coming Soon
+            </span>
+          </div>
+          <p className="text-xs text-emerald-800/90 leading-relaxed">
+            Digital PDF pathology lab reports (CBC, LFT, KFT, Thyroid, Urinalysis, Vit D3/B12) are 100% supported instantly.
+            <span className="font-semibold text-teal-900 ml-1">Note:</span> Deep AI Vision OCR for handwritten doctor notes & camera photos is currently in preview / coming soon.
+          </p>
+        </div>
       </div>
 
       {errorMsg && (
