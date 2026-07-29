@@ -58,8 +58,8 @@ interface AIResponse {
 
 type ChatMessage = { role: string; content: string };
 
-const TIMEOUT_MS = 25_000;
-const STREAM_READ_IDLE_MS = 30_000;
+const TIMEOUT_MS = 8_000;
+const STREAM_READ_IDLE_MS = 15_000;
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -224,7 +224,7 @@ export async function* streamAI(
   systemPrompt: string,
   language = "English"
 ): AsyncGenerator<string> {
-  const { apiKey, baseUrl, model } = getAIConfig();
+  const { apiKey, baseUrl, model } = getAIConfigForStage("chat_reason");
 
   if (!apiKey || !baseUrl) {
     yield "Error: AI provider not configured. The server administrator needs to set AI_API_KEY, AI_BASE_URL, and AI_MODEL environment variables.";
@@ -246,7 +246,7 @@ export async function* streamAI(
           max_tokens: 2048,
         }),
       }),
-      15_000
+      10_000
     );
 
     if (res.ok && res.body) {
@@ -259,7 +259,7 @@ export async function* streamAI(
 
   // Non-streaming fallback if SSE fails or times out
   const lastUserMsg = messages[messages.length - 1]?.content ?? "";
-  const result = await callProvider(lastUserMsg, systemPrompt, language, false);
+  const result = await callAI("chat_reason", lastUserMsg, systemPrompt, { language });
   if (result.content) {
     yield result.content;
   } else {
@@ -279,9 +279,20 @@ export function getAIConfigForStage(stage: PipelineStage) {
     prefix = "CHAT_";
   }
 
-  const apiKey = getEnvSecure(`${prefix}AI_API_KEY`) || getEnvSecure("AI_API_KEY");
-  const baseUrl = (getEnvSecure(`${prefix}AI_BASE_URL`) || getEnvSecure("AI_BASE_URL") || "").replace(/\/+$/, "");
-  const model = getEnvSecure(`${prefix}AI_MODEL`) || getEnvSecure("AI_MODEL") || "gpt-4o";
+  const apiKey = getEnvSecure(`${prefix}AI_API_KEY`) || 
+                 getEnvSecure("REASONING_AI_API_KEY") || 
+                 getEnvSecure("EXTRACTION_AI_API_KEY") || 
+                 getEnvSecure("AI_API_KEY");
+
+  const baseUrl = (getEnvSecure(`${prefix}AI_BASE_URL`) || 
+                   getEnvSecure("REASONING_AI_BASE_URL") || 
+                   getEnvSecure("EXTRACTION_AI_BASE_URL") || 
+                   getEnvSecure("AI_BASE_URL") || "").replace(/\/+$/, "");
+
+  const model = getEnvSecure(`${prefix}AI_MODEL`) || 
+                getEnvSecure("REASONING_AI_MODEL") || 
+                getEnvSecure("EXTRACTION_AI_MODEL") || 
+                getEnvSecure("AI_MODEL") || "llama-3.3-70b-versatile";
 
   return { apiKey, baseUrl, model };
 }
