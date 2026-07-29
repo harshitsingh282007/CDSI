@@ -69,20 +69,15 @@ Schema:
 }
 
 Rules & Deciphering Instructions:
-- HANDWRITTEN DOCTOR PRESCRIPTIONS & CAMERA PHOTOS: Carefully decipher doctor handwriting, shorthand, and OCR text artifacts (e.g. "Tab PCM 500mg 1-0-1 x 5d", "Inj Ceftriaxone 1g IV BD", "Cap Amox 500 TID").
-- Decipher common prescription abbreviations:
-  * OD = Once daily | BD / BID = Twice daily | TID = Three times daily | QID = Four times daily
-  * SOS / PRN = As needed | STAT = Immediately | HS = At bedtime
-  * PO = Oral | IV = Intravenous | IM = Intramuscular | SC = Subcutaneous
-- Extract EVERY SINGLE test and medication found in the document, even if handwritten or abbreviated.
-- MEDICATION NAMES: Do NOT include dosage forms or frequency instructions in the medicineName (e.g., "TAB. DAILY (B-Complex...)" should be medicineName: "B-Complex Forte + Vit B12 + Biotin", frequency: "Daily").
-- REFERENCE RANGES: Extract the EXACT reference range from the text for every lab test. DO NOT SKIP or omit reference ranges.
+- HANDWRITTEN DOCS: Carefully decipher handwriting, shorthand, and OCR artifacts (e.g. "Tab PCM 500mg 1-0-1", "Inj Ceftriaxone").
+- PRESCRIPTIONS ONLY: Extract medications into the \`prescriptions\` array. Decipher abbreviations: OD (once daily), BD/BID (twice), TID (thrice), SOS/PRN (as needed), PO (oral), IV (intravenous). Do NOT include dosage forms or frequency in the medicineName (e.g., "TAB. DAILY (B-Complex...)" should be medicineName: "B-Complex Forte + Vit B12 + Biotin", frequency: "Daily").
+- LAB PARAMETERS ONLY: ONLY extract actual diagnostic tests (blood, urine, imaging) into the \`labParameters\` array. DO NOT extract clinical history, symptoms, physical examination findings, or medications into the \`labParameters\` array! 
+- LAB NAMES: Ensure the "name" strictly contains ONLY the test name. Do not include values, units, or status flags inside the "name" string.
+- REFERENCE RANGES: Extract the EXACT reference range from the text for every lab test. DO NOT SKIP or omit reference ranges. If missing, leave null.
 - status "critical": value dangerously outside range
 - status "borderline": value near but within range limits
-- Extract ALL parameters found in CBC, LFT, KFT, thyroid, lipid, electrolytes, HbA1c, glucose, urine, CRP, ESR, vitamins, infectious serology, Widal, blood culture, cancer markers
-- If no labs found, return empty array
-- If no prescriptions found, return empty array
-- Never fabricate values not present in the text`;
+- Extract ALL parameters found in CBC, LFT, KFT, thyroid, lipid, electrolytes, HbA1c, glucose, urine, CRP, ESR, vitamins, infectious serology, Widal, blood culture, cancer markers.
+- Never fabricate values not present in the text.`;
 
 function parseJsonFromText(text: string): Record<string, unknown> {
   let cleaned = text.trim();
