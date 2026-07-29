@@ -149,6 +149,10 @@ async function callProvider(
     for (const m of ["glm-4-flash", "glm-4-air", "glm-4"]) {
       if (!modelsToTry.includes(m)) modelsToTry.push(m);
     }
+  } else if (baseUrl.includes("nvidia.com")) {
+    for (const m of ["meta/llama-3.3-70b-instruct", "meta/llama3-70b-instruct", "nvidia/llama-3.1-nemotron-70b-instruct"]) {
+      if (!modelsToTry.includes(m)) modelsToTry.push(m);
+    }
   }
 
   let lastError = "";
