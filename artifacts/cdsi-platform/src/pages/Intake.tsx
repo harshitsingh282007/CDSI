@@ -55,46 +55,83 @@ export default function Intake() {
   const [psychiatricReason, setPsychiatricReason] = useState<string>('');
 
   const runAdaptiveAiTriage = async () => {
-    if (!jobId) return;
     setIsGeneratingAdaptive(true);
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-      const res = await fetch(`${apiUrl}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jobId,
-          message: `ACT AS ADAPTIVE CLINICAL TRIAGE ENGINE. Based on uploaded medical data and patient complaint: "${chiefComplaint || 'General Checkup'}", age: ${age || 'Unknown'}, sex: ${biologicalSex || 'Unknown'}.
-          Generate 3 targeted, case-specific clinical follow-up questions for the patient and evaluate if psychiatric screening (PHQ-9/GAD-7) is indicated.
-          Return strictly raw JSON format without backticks:
-          {"questions": ["question 1", "question 2", "question 3"], "psychiatricRecommended": true, "psychiatricReason": "Reason why psychiatric screening is indicated based on findings"}`,
-        }),
-      });
-      const data = await res.json();
-      const text = data.text || '';
-      const match = text.match(/\{[\s\S]*\}/);
-      if (match) {
-        const parsed = JSON.parse(match[0]);
-        if (parsed.questions && Array.isArray(parsed.questions)) {
-          setAdaptiveQuestions(parsed.questions);
+      if (jobId) {
+        const res = await fetch(`${apiUrl}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jobId,
+            message: `ACT AS ADAPTIVE CLINICAL TRIAGE ENGINE. Based on patient complaint: "${chiefComplaint || 'General Checkup'}", age: ${age || 'Unknown'}, sex: ${biologicalSex || 'Unknown'}.
+            Generate 3 targeted, case-specific clinical follow-up questions for the patient and evaluate if psychiatric screening (PHQ-9/GAD-7) is indicated.
+            Return strictly raw JSON format: {"questions": ["question 1", "question 2", "question 3"], "psychiatricRecommended": true, "psychiatricReason": "Reason why psychiatric screening is indicated"}`,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const text = data.text || '';
+          const match = text.match(/\{[\s\S]*\}/);
+          if (match) {
+            const parsed = JSON.parse(match[0]);
+            if (parsed.questions && Array.isArray(parsed.questions)) {
+              setAdaptiveQuestions(parsed.questions);
+            }
+            if (typeof parsed.psychiatricRecommended === 'boolean') {
+              setPsychiatricRecommended(parsed.psychiatricRecommended);
+            }
+            if (parsed.psychiatricReason) {
+              setPsychiatricReason(parsed.psychiatricReason);
+            }
+            return;
+          }
         }
-        if (typeof parsed.psychiatricRecommended === 'boolean') {
-          setPsychiatricRecommended(parsed.psychiatricRecommended);
-        }
-        if (parsed.psychiatricReason) {
-          setPsychiatricReason(parsed.psychiatricReason);
-        }
-      } else {
-        setAdaptiveQuestions([
-          "Have you experienced any abdominal discomfort, nausea, or appetite changes?",
-          "Are you currently experiencing joint pain, fatigue, or muscle weakness?",
-          "Do you have a personal or family history of similar symptoms?"
-        ]);
-        setPsychiatricRecommended(true);
-        setPsychiatricReason("Indicated for clinical correlation due to reported systemic fatigue & chronic symptoms.");
       }
+
+      // Complaint-aware fallback adaptive questions
+      const complaintLower = (chiefComplaint || '').toLowerCase();
+      let qList = [
+        "Have you experienced any abdominal discomfort, nausea, or appetite changes?",
+        "Are you currently experiencing joint pain, fatigue, or muscle weakness?",
+        "Do you have a personal or family history of similar symptoms?"
+      ];
+      let recPsych = false;
+      let recReason = "Physical symptoms identified without significant psychiatric markers.";
+
+      if (complaintLower.includes('fever') || complaintLower.includes('typhoid') || complaintLower.includes('widal') || complaintLower.includes('infection')) {
+        qList = [
+          "Have you experienced step-ladder fever patterns or evening temperature spikes?",
+          "Do you have abdominal pain, bloating, or bowel movement changes (constipation/diarrhea)?",
+          "Have you been exposed to untreated water or outside food in the past 2 weeks?"
+        ];
+        recPsych = false;
+      } else if (complaintLower.includes('pain') || complaintLower.includes('headache') || complaintLower.includes('chest')) {
+        qList = [
+          "Does the pain radiate to your arm, back, jaw, or neck?",
+          "On a scale of 1-10, how severe is the pain and what aggravates it?",
+          "Do you experience shortness of breath, sweating, or dizziness during pain episodes?"
+        ];
+        recPsych = true;
+        recReason = "Pain syndrome indicates correlation for anxiety/stress assessment.";
+      } else if (complaintLower.includes('tired') || complaintLower.includes('fatigue') || complaintLower.includes('stress') || complaintLower.includes('sleep')) {
+        qList = [
+          "How many hours of restful sleep do you average per night?",
+          "Have you noticed changes in mood, concentration, or daily motivation?",
+          "Are you experiencing physical fatigue alongside emotional exhaustion?"
+        ];
+        recPsych = true;
+        recReason = "Psychiatric screening (PHQ-9 / GAD-7) recommended due to reported fatigue & stress.";
+      } else {
+        recPsych = true;
+        recReason = "Recommended for holistic multi-system baseline correlation.";
+      }
+
+      setAdaptiveQuestions(qList);
+      setPsychiatricRecommended(recPsych);
+      setPsychiatricReason(recReason);
     } catch (err) {
-      console.error("Adaptive AI Triage failed:", err);
+      console.error("Adaptive AI generation error:", err);
       setAdaptiveQuestions([
         "Have you experienced any abdominal discomfort, nausea, or appetite changes?",
         "Are you currently experiencing joint pain, fatigue, or muscle weakness?",
@@ -507,11 +544,11 @@ export default function Intake() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-emerald-200 pb-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-emerald-600 text-white rounded-lg shadow-sm">
-                    <Sparkles className="w-6 h-6" />
+                    <Activity className="w-6 h-6" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900">Adaptive AI Case Screening & Triage</h2>
-                    <p className="text-xs text-gray-600 mt-0.5">AI analyzes uploaded document data & complaint to generate targeted case questions and determine psychiatric screening necessity.</p>
+                    <h2 className="text-xl font-bold text-gray-900">Adaptive AI Assessment</h2>
+                    <p className="text-xs text-gray-600 mt-0.5">Generates dynamic case questions & auto-determines psychiatric screening requirement.</p>
                   </div>
                 </div>
                 <button
@@ -527,8 +564,8 @@ export default function Intake() {
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-4 h-4 text-amber-300" />
-                      Run AI Adaptive Triage
+                      <Activity className="w-4 h-4 text-emerald-200" />
+                      Adaptive AI Run
                     </>
                   )}
                 </button>
