@@ -65,7 +65,7 @@ export const startAnalysisBodyLanguageDefault = `English`;
 export const StartAnalysisBody = zod.object({
   "jobId": zod.string(),
   "intakeData": zod.object({
-  "analysisType": zod.enum(['physical', 'psychiatric', 'both']),
+  "analysisType": zod.enum(['physical', 'psychiatric', 'both', 'adaptive']),
   "chiefComplaint": zod.string().nullish(),
   "symptomDuration": zod.string().nullish(),
   "age": zod.number().nullish(),

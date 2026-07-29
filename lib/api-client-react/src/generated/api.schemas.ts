@@ -67,6 +67,7 @@ export const IntakeFormDataAnalysisType = {
   physical: 'physical',
   psychiatric: 'psychiatric',
   both: 'both',
+  adaptive: 'adaptive',
 } as const;
 
 export interface IntakeFormData {

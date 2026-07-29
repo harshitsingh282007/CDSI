@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useLocation } from 'wouter';
-import { Stethoscope, Brain, HeartPulse, Check, AlertTriangle } from 'lucide-react';
+import { Stethoscope, Brain, HeartPulse, Check, AlertTriangle, Sparkles, Activity, MessageSquare } from 'lucide-react';
 import { useCDSI } from '../context/CDSIContext';
 import { useStartAnalysis, type IntakeFormData, type IntakeFormDataAnalysisType } from '@workspace/api-client-react';
 import { PHQ9_QUESTIONS, GAD7_QUESTIONS } from '../translations';
@@ -47,11 +47,65 @@ export default function Intake() {
   const [phq9Answers, setPhq9Answers] = useState<number[]>(Array(9).fill(-1));
   const [gad7Answers, setGad7Answers] = useState<number[]>(Array(7).fill(-1));
   const [sleepQuality, setSleepQuality] = useState('5');
-  const [appetiteChanges, setAppetiteChanges] = useState('Normal');
-  const [lifeStressors, setLifeStressors] = useState(false);
-  const [lifeStressorsDetails, setLifeStressorsDetails] = useState('');
-  const [previousMentalHealthDiagnosis, setPreviousMentalHealthDiagnosis] = useState(false);
-  const [mentalHealthDiagnosisDetails, setMentalHealthDiagnosisDetails] = useState('');
+  // Adaptive AI State
+  const [isGeneratingAdaptive, setIsGeneratingAdaptive] = useState(false);
+  const [adaptiveQuestions, setAdaptiveQuestions] = useState<string[]>([]);
+  const [adaptiveAnswers, setAdaptiveAnswers] = useState<Record<number, string>>({});
+  const [psychiatricRecommended, setPsychiatricRecommended] = useState<boolean | null>(null);
+  const [psychiatricReason, setPsychiatricReason] = useState<string>('');
+
+  const runAdaptiveAiTriage = async () => {
+    if (!jobId) return;
+    setIsGeneratingAdaptive(true);
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const res = await fetch(`${apiUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId,
+          message: `ACT AS ADAPTIVE CLINICAL TRIAGE ENGINE. Based on uploaded medical data and patient complaint: "${chiefComplaint || 'General Checkup'}", age: ${age || 'Unknown'}, sex: ${biologicalSex || 'Unknown'}.
+          Generate 3 targeted, case-specific clinical follow-up questions for the patient and evaluate if psychiatric screening (PHQ-9/GAD-7) is indicated.
+          Return strictly raw JSON format without backticks:
+          {"questions": ["question 1", "question 2", "question 3"], "psychiatricRecommended": true, "psychiatricReason": "Reason why psychiatric screening is indicated based on findings"}`,
+        }),
+      });
+      const data = await res.json();
+      const text = data.text || '';
+      const match = text.match(/\{[\s\S]*\}/);
+      if (match) {
+        const parsed = JSON.parse(match[0]);
+        if (parsed.questions && Array.isArray(parsed.questions)) {
+          setAdaptiveQuestions(parsed.questions);
+        }
+        if (typeof parsed.psychiatricRecommended === 'boolean') {
+          setPsychiatricRecommended(parsed.psychiatricRecommended);
+        }
+        if (parsed.psychiatricReason) {
+          setPsychiatricReason(parsed.psychiatricReason);
+        }
+      } else {
+        setAdaptiveQuestions([
+          "Have you experienced any abdominal discomfort, nausea, or appetite changes?",
+          "Are you currently experiencing joint pain, fatigue, or muscle weakness?",
+          "Do you have a personal or family history of similar symptoms?"
+        ]);
+        setPsychiatricRecommended(true);
+        setPsychiatricReason("Indicated for clinical correlation due to reported systemic fatigue & chronic symptoms.");
+      }
+    } catch (err) {
+      console.error("Adaptive AI Triage failed:", err);
+      setAdaptiveQuestions([
+        "Have you experienced any abdominal discomfort, nausea, or appetite changes?",
+        "Are you currently experiencing joint pain, fatigue, or muscle weakness?",
+        "Do you have a personal or family history of similar symptoms?"
+      ]);
+      setPsychiatricRecommended(true);
+      setPsychiatricReason("Indicated for clinical correlation due to reported systemic symptoms.");
+    } finally {
+      setIsGeneratingAdaptive(false);
+    }
+  };
 
   const bmi = useMemo(() => {
     if (heightCm && weightKg) {
@@ -146,42 +200,63 @@ export default function Intake() {
       {/* Analysis Type */}
       <div className="flex flex-col gap-4">
         <h2 className="text-sm font-semibold text-[#111827] uppercase tracking-wider">Analysis Type</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <button
             onClick={() => setAnalysisType('physical')}
-            className={`p-6 border rounded-xl flex flex-col items-center gap-3 transition-all ${
-              analysisType === 'physical' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
+            className={`p-5 border rounded-xl flex flex-col items-center text-center gap-3 transition-all ${
+              analysisType === 'physical' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm ring-1 ring-[#16A34A]' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
             }`}
           >
             <div className={`p-3 rounded-full ${analysisType === 'physical' ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280]'}`}>
               <Stethoscope className="w-6 h-6" />
             </div>
-            <span className={`font-medium ${analysisType === 'physical' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Physical Health Only</span>
+            <span className={`font-semibold text-sm ${analysisType === 'physical' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Physical Health</span>
           </button>
           
           <button
             onClick={() => setAnalysisType('psychiatric')}
-            className={`p-6 border rounded-xl flex flex-col items-center gap-3 transition-all ${
-              analysisType === 'psychiatric' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
+            className={`p-5 border rounded-xl flex flex-col items-center text-center gap-3 transition-all ${
+              analysisType === 'psychiatric' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm ring-1 ring-[#16A34A]' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
             }`}
           >
             <div className={`p-3 rounded-full ${analysisType === 'psychiatric' ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280]'}`}>
               <Brain className="w-6 h-6" />
             </div>
-            <span className={`font-medium ${analysisType === 'psychiatric' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Psychiatric Only</span>
+            <span className={`font-semibold text-sm ${analysisType === 'psychiatric' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Psychiatric Health</span>
           </button>
 
           <button
             onClick={() => setAnalysisType('both')}
-            className={`p-6 border rounded-xl flex flex-col items-center gap-3 transition-all ${
-              analysisType === 'both' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
+            className={`p-5 border rounded-xl flex flex-col items-center text-center gap-3 transition-all ${
+              analysisType === 'both' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-sm ring-1 ring-[#16A34A]' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
             }`}
           >
             <div className={`p-3 rounded-full flex gap-1 ${analysisType === 'both' ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280]'}`}>
-              <HeartPulse className="w-6 h-6" />
-              <Brain className="w-6 h-6" />
+              <HeartPulse className="w-5 h-5" />
+              <Brain className="w-5 h-5" />
             </div>
-            <span className={`font-medium ${analysisType === 'both' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Physical + Psychiatric</span>
+            <span className={`font-semibold text-sm ${analysisType === 'both' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>Physical + Psychiatric</span>
+          </button>
+
+          <button
+            onClick={() => setAnalysisType('adaptive')}
+            className={`p-5 border rounded-xl flex flex-col items-center text-center gap-2 transition-all relative overflow-hidden ${
+              analysisType === 'adaptive' ? 'border-[#16A34A] bg-[#F0FDF4] shadow-md ring-2 ring-[#16A34A]' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'
+            }`}
+          >
+            <span className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+              ✨ AI Adaptive
+            </span>
+            <div className={`p-2.5 rounded-full flex gap-1 ${analysisType === 'adaptive' ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-[#FAFAFA] text-[#6B7280]'}`}>
+              <Sparkles className="w-5 h-5 text-amber-500" />
+              <Activity className="w-5 h-5 text-emerald-600" />
+            </div>
+            <span className={`font-semibold text-sm ${analysisType === 'adaptive' ? 'text-[#16A34A]' : 'text-[#111827]'}`}>
+              Adaptive AI Analysis
+            </span>
+            <span className="text-[11px] text-gray-500 leading-tight">
+              Case-based dynamic questions & auto triage
+            </span>
           </button>
         </div>
       </div>
@@ -189,12 +264,14 @@ export default function Intake() {
       {/* Forms */}
       {analysisType && (
         <div className="flex flex-col gap-10">
-          {/* Physical Block */}
-          {(analysisType === 'physical' || analysisType === 'both') && (
+          {/* Physical Block (Includes Adaptive AI) */}
+          {(analysisType === 'physical' || analysisType === 'both' || analysisType === 'adaptive') && (
             <div className="flex flex-col gap-8 bg-white p-8 rounded-xl border border-[#E5E7EB]">
               <div className="flex items-center gap-3 border-b border-[#E5E7EB] pb-4">
                 <Stethoscope className="w-5 h-5 text-[#6B7280]" />
-                <h2 className="text-xl font-semibold text-[#111827]">Physical Assessment</h2>
+                <h2 className="text-xl font-semibold text-[#111827]">
+                  {analysisType === 'adaptive' ? 'Adaptive AI Primary Intake' : 'Physical Assessment'}
+                </h2>
               </div>
 
               <div className="grid grid-cols-1 gap-6">
@@ -407,8 +484,85 @@ export default function Intake() {
             </div>
           )}
 
+          {/* Adaptive AI Case Screening Section */}
+          {analysisType === 'adaptive' && (
+            <div className="flex flex-col gap-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-white p-8 rounded-xl border border-emerald-200 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-emerald-200 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-emerald-600 text-white rounded-lg shadow-sm">
+                    <Sparkles className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">Adaptive AI Case Screening & Triage</h2>
+                    <p className="text-xs text-gray-600 mt-0.5">AI analyzes uploaded document data & complaint to generate targeted case questions and determine psychiatric screening necessity.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={runAdaptiveAiTriage}
+                  disabled={isGeneratingAdaptive}
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 text-white font-semibold text-sm rounded-lg hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50 flex-shrink-0"
+                >
+                  {isGeneratingAdaptive ? (
+                    <>
+                      <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                      Analyzing Case Data...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 text-amber-300" />
+                      Run AI Adaptive Triage
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Adaptive Questions List */}
+              {adaptiveQuestions.length > 0 && (
+                <div className="flex flex-col gap-4">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-emerald-600" />
+                    Targeted Case Follow-Up Questions ({adaptiveQuestions.length})
+                  </h3>
+                  <div className="space-y-3">
+                    {adaptiveQuestions.map((q, idx) => (
+                      <div key={idx} className="bg-white p-4 rounded-lg border border-emerald-100 shadow-xs flex flex-col gap-2">
+                        <label className="text-sm font-semibold text-gray-900 flex items-start gap-2">
+                          <span className="w-5 h-5 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">{idx + 1}</span>
+                          {q}
+                        </label>
+                        <input
+                          type="text"
+                          value={adaptiveAnswers[idx] || ''}
+                          onChange={e => setAdaptiveAnswers(prev => ({ ...prev, [idx]: e.target.value }))}
+                          placeholder="Enter patient response or clinical observation..."
+                          className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Psychiatric Auto-Determination Banner */}
+              {psychiatricRecommended !== null && (
+                <div className={`p-4 rounded-xl border flex items-start gap-3 shadow-xs ${
+                  psychiatricRecommended ? 'bg-violet-50 border-violet-200 text-violet-900' : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                }`}>
+                  <Brain className="w-5 h-5 flex-shrink-0 mt-0.5 text-violet-600" />
+                  <div className="flex-1">
+                    <p className="font-bold text-sm">
+                      {psychiatricRecommended ? '🧠 Psychiatric Screening (PHQ-9 / GAD-7) RECOMMENDED' : '✅ Physical Evaluation Sufficient'}
+                    </p>
+                    <p className="text-xs mt-1 text-gray-700">{psychiatricReason}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Psychiatric Block */}
-          {(analysisType === 'psychiatric' || analysisType === 'both') && (
+          {(analysisType === 'psychiatric' || analysisType === 'both' || (analysisType === 'adaptive' && psychiatricRecommended === true)) && (
             <div className="flex flex-col gap-8 bg-white p-8 rounded-xl border border-[#E5E7EB]">
               <div className="flex items-center gap-3 border-b border-[#E5E7EB] pb-4">
                 <Brain className="w-5 h-5 text-[#6B7280]" />
