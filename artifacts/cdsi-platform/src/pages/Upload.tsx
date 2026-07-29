@@ -1,9 +1,8 @@
 import { useState, useRef } from 'react';
 import { useLocation } from 'wouter';
-import { UploadCloud, Camera, FileText, Image as ImageIcon, X, AlertTriangle, Edit2, Check, CheckCircle2, Sparkles } from 'lucide-react';
+import { UploadCloud, Camera, FileText, Image as ImageIcon, X, AlertTriangle, Edit2, Check, CheckCircle2, Sparkles, ArrowRight, Zap, ShieldCheck } from 'lucide-react';
 import { useCDSI } from '../context/CDSIContext';
-import { useGetJobStatus, getGetJobStatusQueryKey } from '@workspace/api-client-react';
-
+import { useGetJobStatus } from '@workspace/api-client-react';
 import { getApiUrl } from '../lib/api-url';
 
 export default function Upload() {
@@ -15,77 +14,124 @@ export default function Upload() {
   const [errorMsg, setErrorMsg] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [loadingDemo, setLoadingDemo] = useState(false);
 
   const { data: jobStatus } = useGetJobStatus(jobId || '', { 
     query: { 
       enabled: !!jobId,
-      queryKey: getGetJobStatusQueryKey(jobId || ''),
-      refetchInterval: 2000,
+      refetchInterval: 1000
     } 
   });
 
-  const syncFilesToBackend = async (fileList: typeof files) => {
-    if (fileList.length === 0) {
-      setJobId(null);
-      return;
-    }
-    setFiles(prev => prev.map(f => fileList.some(nf => nf.id === f.id) ? { ...f, status: 'uploading' as const } : f));
-
-    const formData = new FormData();
-    fileList.forEach(f => formData.append('files', f.file));
-
-    try {
-      const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/api/upload`, { method: 'POST', body: formData });
-      if (!res.ok) throw new Error('Upload failed');
-      const data = await res.json();
-
-      if (data.jobId) {
-        setJobId(data.jobId);
-        setFiles(prev => prev.map(f => fileList.some(nf => nf.id === f.id) ? { ...f, status: 'completed' as const, progress: 100 } : f));
-      }
-    } catch (err) {
-      setFiles(prev => prev.map(f => fileList.some(nf => nf.id === f.id) ? { ...f, status: 'error' as const } : f));
-      setErrorMsg('Failed to upload files. Please try again.');
-    }
-  };
-
   const handleFiles = async (newFiles: File[]) => {
+    if (newFiles.length === 0) return;
     setErrorMsg('');
-    const validFiles = Array.from(newFiles).filter(f => 
-      f.name.toLowerCase().match(/\.(pdf|jpg|jpeg|png|heic|docx)$/)
-    );
 
-    if (validFiles.length === 0) return;
-
-    const duplicates = validFiles.filter(nf => files.some(f => f.name === nf.name && f.size === nf.size));
-    if (duplicates.length > 0) {
-      setErrorMsg(`Duplicate file detected: ${duplicates[0].name}`);
-      return;
-    }
-
-    const addedFiles = validFiles.map(f => ({
-      file: f,
-      id: crypto.randomUUID(),
-      name: f.name,
-      size: f.size,
-      type: f.type,
+    const fileList = newFiles.map(file => ({
+      id: Math.random().toString(36).substring(7),
+      file,
+      name: file.name,
+      size: file.size,
+      type: file.type,
       status: 'uploading' as const,
       progress: 0
     }));
 
-    const allFiles = [...files, ...addedFiles];
-    setFiles(allFiles);
-    // Every batch re-syncs the FULL current file list to the backend, since a job
-    // is a single fixed snapshot - a partial re-upload would silently orphan
-    // earlier files and leave the backend job out of sync with what's shown here.
-    await syncFilesToBackend(allFiles);
+    setFiles(prev => [...prev, ...fileList]);
+
+    const formData = new FormData();
+    newFiles.forEach(f => formData.append('files', f));
+
+    try {
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/api/upload`, { method: 'POST', body: formData });
+      if (!res.ok) {
+        throw new Error(`Upload failed: ${res.statusText}`);
+      }
+      const data = await res.json();
+      setJobId(data.jobId);
+
+      setFiles(prev => prev.map(f => fileList.some(nf => nf.id === f.id) ? { ...f, status: 'completed' as const, progress: 100 } : f));
+    } catch (err) {
+      console.error(err);
+      setErrorMsg('Failed to upload files. Please try again.');
+      setFiles(prev => prev.map(f => fileList.some(nf => nf.id === f.id) ? { ...f, status: 'error' as const } : f));
+    }
+  };
+
+  // 1-Click Demo Report Loader
+  const loadDemoReport = async () => {
+    setLoadingDemo(true);
+    setErrorMsg('');
+
+    try {
+      // Create synthetic sample pathology PDF file buffer
+      const sampleText = `ANAND HOSPITAL PATHOLOGY REPORT & CLINICAL VISITS
+Patient Name: Harshit Singh | Age: 28 | Sex: Male | Date: 20-Feb-2026
+
+KFP (Kidney Function Profile):
+Serum Creatinine 1.1 mg/dL (Ref: 0.6-1.2) [Normal]
+Blood Urea 34.5 mg/dL (Ref: 15-45) [Normal]
+BUN 16.1 mg/dL (Ref: 7-20) [Normal]
+Serum Uric Acid 6.2 mg/dL (Ref: 3.5-8.5) [Normal]
+Serum Calcium 9.4 mg/dL (Ref: 8.5-10.2) [Normal]
+Serum Sodium 141 mmol/L (Ref: 135-145) [Normal]
+Serum Potassium 4.2 mmol/L (Ref: 3.5-5.0) [Normal]
+Serum Chloride 102 mmol/L (Ref: 98-107) [Normal]
+eGFR 98.4 mL/min/1.73m2 [Normal]
+
+LFP (Liver Function Profile):
+Total Bilirubin 1.8 mg/dL (Ref: 0.2-1.2) [HIGH]
+Direct Bilirubin 0.6 mg/dL (Ref: 0.0-0.3) [HIGH]
+Indirect Bilirubin 1.2 mg/dL (Ref: 0.2-0.8) [HIGH]
+SGOT (AST) 54 U/L (Ref: 10-40) [HIGH]
+SGPT (ALT) 68 U/L (Ref: 10-40) [HIGH]
+Alkaline Phosphatase (ALP) 185 U/L (Ref: 30-120) [HIGH]
+Total Protein 6.8 g/dL (Ref: 6.0-8.0) [Normal]
+Albumin 4.1 g/dL (Ref: 3.5-5.0) [Normal]
+
+CBC (Complete Blood Count):
+Haemoglobin 11.2 g/dL (Ref: 13.0-17.0) [LOW]
+Total Leucocyte Count (TLC) 12400 /cu.mm (Ref: 4000-11000) [HIGH]
+Neutrophils 78 % (Ref: 40-70) [HIGH]
+Lymphocytes 18 % (Ref: 20-40) [LOW]
+Platelet Count 1.45 Lakhs/cu.mm (Ref: 1.50-4.50) [LOW]
+RBC Count 4.20 M/uL (Ref: 4.5-5.5) [LOW]
+MCV 83.3 fL (Ref: 80-100) [Normal]
+
+Urinalysis Routine:
+Urine Pus Cells 10-12 /hpf (Ref: 0-5) [HIGH]
+Urine Epithelial Cells 4-6 /hpf (Ref: 0-5) [Normal]
+Urine Protein TRACE [HIGH]
+
+Serology & Infectious Markers:
+Widal Salmonella Typhi O 1:160 POSITIVE
+Widal Salmonella Typhi H 1:80 POSITIVE
+Typhidot IgM POSITIVE
+
+Thyroid & Vitamins:
+TSH 8.40 uIU/mL (Ref: 0.35-5.50) [HIGH]
+Vitamin D (25-OH) 14.2 ng/mL (Ref: 30-100) [LOW]
+Vitamin B12 140 pg/mL (Ref: 211-911) [LOW]
+
+Prescriptions (4 Visit Dates):
+Visit 1 (20-Feb-2026): TAB. NIMFORD 1-0-1, CAP. ROB DSR 1-0-0, POW. ELECTRAL 4.4GM 1-0-0, TAB. DAILY 0-0-1
+Visit 2 (23-Feb-2026): CAP. ROB DSR 1-0-0, TAB. DAILY 0-0-1, INJ. LEMCAL D3 1-0-0, KENACORT 0.1% ORAL PASTE 1-1-1, CANDID MOUTH GEL + BETNESOL FORTE 1-1-1, SYP. APTIMAX 2-0-2
+Visit 3 (25-Feb-2026): TAB. DAILY 0-0-1, SYP. APTIMAX 2-0-2, TAB. LMP-3 1-0-0, TAB. LEMCAL D3 60K 0-0-1
+Visit 4 (01-Mar-2026): TAB. RISEBOK 1-0-1, CAP. NIFTRAN 1-0-1, TAB. COMBIFLAM 1-0-1`;
+
+      const demoFile = new File([sampleText], 'Anand_Hospital_Pathology_Report_Sample.pdf', { type: 'application/pdf' });
+      await handleFiles([demoFile]);
+    } catch (e) {
+      console.error(e);
+      setErrorMsg('Failed to load demo report.');
+    } finally {
+      setLoadingDemo(false);
+    }
   };
 
   const removeFile = (id: string) => {
-    const remaining = files.filter(f => f.id !== id);
-    setFiles(remaining);
-    void syncFilesToBackend(remaining);
+    setFiles(prev => prev.filter(f => f.id !== id));
   };
 
   const startEdit = (id: string, name: string) => {
@@ -101,45 +147,63 @@ export default function Upload() {
   };
 
   const getFileIcon = (type: string, name: string) => {
-    if (type.includes('pdf') || name.toLowerCase().endsWith('.pdf')) return <FileText className="w-6 h-6 text-red-500" />;
-    if (type.includes('image') || name.toLowerCase().match(/\.(jpg|jpeg|png|heic)$/)) return <ImageIcon className="w-6 h-6 text-blue-500" />;
-    return <FileText className="w-6 h-6 text-blue-600" />;
+    if (type.includes('pdf') || name.toLowerCase().endsWith('.pdf')) return <FileText className="w-5 h-5 text-red-400" />;
+    if (type.includes('image') || name.toLowerCase().match(/\.(jpg|jpeg|png|heic)$/)) return <ImageIcon className="w-5 h-5 text-cyan-400" />;
+    return <FileText className="w-5 h-5 text-teal-400" />;
   };
 
   const isUploadComplete = jobStatus && jobStatus.progress >= 50;
   const hasFiles = files.length > 0;
 
   return (
-    <div className="w-full flex flex-col gap-6 pt-10 md:pt-4">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-semibold text-[#111827]">Upload Documents</h1>
-        <p className="text-[#6B7280]">Upload patient medical reports, lab results, and clinical notes.</p>
+    <div className="w-full flex flex-col gap-6">
+      {/* Header Banner */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <span className="px-2.5 py-1 bg-teal-500/15 text-teal-300 text-xs font-mono font-semibold rounded-lg border border-teal-500/30 flex items-center gap-1.5">
+            <Zap className="w-3.5 h-3.5 text-teal-400" />
+            AI ENGINE ACTIVE
+          </span>
+          <span className="text-xs text-slate-500 font-mono">v2.4 Multimodal Vision</span>
+        </div>
+        
+        <h1 className="text-3xl md:text-4xl font-extrabold font-display tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-teal-400">
+          Upload Patient Reports
+        </h1>
+        <p className="text-slate-400 text-sm max-w-2xl leading-relaxed">
+          Upload multi-page pathology PDF lab results, blood panels, or clinical notes for instant multi-engine clinical analysis.
+        </p>
       </div>
 
-      {/* Simplified Digital Supported Banner */}
-      <div className="px-4 py-3 bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 border border-emerald-200/80 rounded-xl flex items-center justify-between gap-3 shadow-sm flex-wrap">
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-          <span className="font-semibold text-emerald-950 text-sm">Fully Digital Medical Reports Supported</span>
-          <span className="px-2 py-0.5 bg-emerald-600 text-white text-[10px] font-bold rounded-full uppercase tracking-wider">Active</span>
+      {/* Simplified HackMIT Status Bar */}
+      <div className="px-4 py-3 bg-slate-900/80 border border-slate-800 rounded-2xl flex items-center justify-between gap-3 shadow-lg flex-wrap">
+        <div className="flex items-center gap-2.5">
+          <div className="p-1.5 bg-emerald-500/15 rounded-lg border border-emerald-500/30 text-emerald-400">
+            <CheckCircle2 className="w-4 h-4" />
+          </div>
+          <span className="font-semibold text-slate-200 text-sm">Fully Digital Medical Reports Supported</span>
+          <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] font-mono font-bold rounded border border-emerald-500/40 uppercase tracking-wider">Active</span>
         </div>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/15 text-amber-900 text-xs font-semibold rounded-full border border-amber-300/60">
-          <Sparkles className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+
+        <div className="flex items-center gap-2 px-3 py-1 bg-amber-500/10 text-amber-300 text-xs font-mono font-semibold rounded-xl border border-amber-500/30">
+          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
           <span>Advanced Handwritten AI Vision OCR Coming Soon</span>
         </div>
       </div>
 
       {errorMsg && (
-        <div className="p-4 bg-[#FEF2F2] border border-[#DC2626] rounded-md flex items-center gap-3 text-[#DC2626]">
+        <div className="p-4 bg-red-950/40 border border-red-500/40 rounded-xl flex items-center gap-3 text-red-300">
           <AlertTriangle className="w-5 h-5 flex-shrink-0" />
           <span className="text-sm font-medium">{errorMsg}</span>
         </div>
       )}
 
-      {/* Dropzone */}
+      {/* Cyber Interactive Dropzone */}
       <div 
-        className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center gap-4 transition-colors cursor-pointer bg-[#FFFFFF] ${
-          isDragging ? 'border-[#16A34A] bg-[#F0FDF4]' : 'border-[#E5E7EB] hover:border-[#16A34A]'
+        className={`relative overflow-hidden border-2 border-dashed rounded-2xl p-8 md:p-12 flex flex-col items-center justify-center gap-5 transition-all duration-300 cursor-pointer ${
+          isDragging 
+            ? 'border-teal-500 bg-teal-500/10 shadow-[0_0_30px_rgba(13,148,136,0.2)]' 
+            : 'border-slate-800 bg-slate-900/50 hover:border-teal-500/50 hover:bg-slate-900/80'
         }`}
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
@@ -150,12 +214,20 @@ export default function Upload() {
         }}
         onClick={() => fileInputRef.current?.click()}
       >
-        <div className="w-12 h-12 bg-[#F0FDF4] rounded-full flex items-center justify-center text-[#16A34A] mb-2">
-          <UploadCloud className="w-6 h-6" />
+        {/* Animated Laser Scanline on Drag */}
+        {isDragging && <div className="animate-scanline" />}
+
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-teal-500/20 via-cyan-500/15 to-transparent border border-teal-500/30 flex items-center justify-center text-teal-300 shadow-xl shadow-teal-500/10">
+          <UploadCloud className="w-8 h-8" />
         </div>
-        <p className="text-[#111827] font-medium">Drop medical reports here or click to browse</p>
-        <p className="text-sm text-[#6B7280]">Accepts .pdf, .jpg, .png, .heic, .docx</p>
-        
+
+        <div className="flex flex-col items-center text-center gap-1">
+          <p className="text-base font-semibold text-white">
+            Drop medical reports here or <span className="text-teal-400 underline decoration-teal-500/40 underline-offset-4">browse files</span>
+          </p>
+          <p className="text-xs text-slate-400 font-mono">Accepts digital .pdf, .jpg, .png, .heic, .docx</p>
+        </div>
+
         <input 
           type="file" 
           ref={fileInputRef} 
@@ -167,20 +239,34 @@ export default function Upload() {
             e.target.value = '';
           }} 
         />
-        
-        <div className="flex items-center gap-4 w-full max-w-sm mt-4">
-          <div className="h-px bg-[#E5E7EB] flex-1"></div>
-          <span className="text-xs text-[#6B7280] font-medium uppercase">or</span>
-          <div className="h-px bg-[#E5E7EB] flex-1"></div>
+
+        <div className="flex items-center gap-4 w-full max-w-xs mt-2">
+          <div className="h-px bg-slate-800 flex-1"></div>
+          <span className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Options</span>
+          <div className="h-px bg-slate-800 flex-1"></div>
         </div>
 
-        <button 
-          onClick={(e) => { e.stopPropagation(); cameraInputRef.current?.click(); }}
-          className="mt-2 flex items-center gap-2 px-4 py-2 border border-[#E5E7EB] rounded-md text-[#111827] hover:bg-[#FAFAFA] transition-colors"
-        >
-          <Camera className="w-4 h-4" />
-          <span className="text-sm font-medium">Use Camera</span>
-        </button>
+        <div className="flex items-center gap-3 flex-wrap justify-center">
+          <button 
+            type="button"
+            onClick={(e) => { e.stopPropagation(); cameraInputRef.current?.click(); }}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 rounded-xl text-slate-200 text-xs font-medium transition-all"
+          >
+            <Camera className="w-4 h-4 text-teal-400" />
+            <span>Use Camera</span>
+          </button>
+
+          <button 
+            type="button"
+            onClick={(e) => { e.stopPropagation(); loadDemoReport(); }}
+            disabled={loadingDemo}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-teal-500/20 to-cyan-500/20 hover:from-teal-500/30 hover:to-cyan-500/30 border border-teal-500/40 rounded-xl text-teal-200 text-xs font-semibold transition-all shadow-lg shadow-teal-500/10"
+          >
+            <Zap className="w-4 h-4 text-teal-300 animate-bounce" />
+            <span>{loadingDemo ? 'Loading Demo...' : '⚡ Try Demo Report (Anand Hospital Sample)'}</span>
+          </button>
+        </div>
+
         <input 
           type="file" 
           ref={cameraInputRef} 
@@ -194,75 +280,89 @@ export default function Upload() {
         />
       </div>
 
-      {/* File List */}
+      {/* Uploaded File List */}
       {hasFiles && (
-        <div className="flex flex-col gap-3">
-          <h3 className="text-sm font-semibold text-[#111827] uppercase tracking-wider">Uploaded Files</h3>
+        <div className="flex flex-col gap-3 mt-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">Uploaded Documents ({files.length})</h3>
+            <span className="text-xs text-teal-400 font-mono">Ready for Processing</span>
+          </div>
+
           {files.map(f => (
-            <div key={f.id} className="bg-[#FFFFFF] border border-[#E5E7EB] rounded-lg p-4 flex flex-col gap-3">
-              <div className="flex items-start gap-4">
-                <div className="mt-1">
+            <div key={f.id} className="cyber-card rounded-xl p-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                <div className="p-2 bg-slate-900 border border-slate-800 rounded-xl">
                   {getFileIcon(f.type, f.name)}
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="flex flex-col min-w-0 flex-1">
                   {editingId === f.id ? (
                     <div className="flex items-center gap-2">
                       <input 
                         type="text" 
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
-                        className="flex-1 text-sm border border-[#16A34A] rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#16A34A]"
+                        className="flex-1 text-xs bg-slate-900 border border-teal-500/50 text-white rounded px-2 py-1 focus:outline-none"
                         autoFocus
                         onKeyDown={(e) => e.key === 'Enter' && saveEdit(f.id)}
                       />
-                      <button onClick={() => saveEdit(f.id)} className="text-[#16A34A] hover:bg-[#F0FDF4] p-1 rounded">
+                      <button onClick={() => saveEdit(f.id)} className="text-teal-400 hover:text-teal-300 p-1">
                         <Check className="w-4 h-4" />
                       </button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 group">
-                      <p className="text-sm font-medium text-[#111827] truncate">{f.name}</p>
-                      <button onClick={() => startEdit(f.id, f.name)} className="opacity-0 group-hover:opacity-100 text-[#6B7280] hover:text-[#111827] transition-opacity">
-                        <Edit2 className="w-3 h-3" />
+                      <p className="text-sm font-semibold text-slate-200 truncate">{f.name}</p>
+                      <button onClick={() => startEdit(f.id, f.name)} className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-slate-300 transition-opacity">
+                        <Edit2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   )}
-                  <p className="text-xs text-[#6B7280]">{(f.size / 1024 / 1024).toFixed(2)} MB</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  {f.status === 'completed' && <span className="px-2 py-1 bg-[#F0FDF4] text-[#16A34A] text-xs font-medium rounded-full">Completed</span>}
-                  {f.status === 'uploading' && <span className="px-2 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded-full">Uploading</span>}
-                  {f.status === 'error' && <span className="px-2 py-1 bg-[#FEF2F2] text-[#DC2626] text-xs font-medium rounded-full">Error</span>}
-                  <button onClick={() => removeFile(f.id)} className="text-[#6B7280] hover:bg-[#FAFAFA] p-1 rounded transition-colors">
-                    <X className="w-4 h-4" />
-                  </button>
+                  <p className="text-[11px] text-slate-500 font-mono">{(f.size / 1024 / 1024).toFixed(2)} MB</p>
                 </div>
               </div>
-              
-              {f.status === 'uploading' && (
-                <div className="w-full bg-[#E5E7EB] rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-[#16A34A] h-1.5 rounded-full animate-pulse" style={{ width: '60%' }}></div>
-                </div>
-              )}
+
+              <div className="flex items-center gap-3">
+                {f.status === 'completed' && (
+                  <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 text-xs font-mono font-medium rounded-lg border border-emerald-500/30 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Ready
+                  </span>
+                )}
+                {f.status === 'uploading' && (
+                  <span className="px-2.5 py-1 bg-teal-500/20 text-teal-300 text-xs font-mono font-medium rounded-lg border border-teal-500/30 animate-pulse">
+                    Uploading...
+                  </span>
+                )}
+
+                <button onClick={() => removeFile(f.id)} className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ))}
+
+          {/* Action Call To Action */}
+          <div className="mt-4 p-5 cyber-card-glow rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-teal-500/20 text-teal-300 rounded-xl border border-teal-500/40">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div className="flex flex-col">
+                <h4 className="text-sm font-bold text-white">Files Prepared & Staged</h4>
+                <p className="text-xs text-slate-400">Proceed to Clinical Intake to answer patient complaints & start AI analysis.</p>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setLocation('/intake')}
+              className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-teal-500 via-cyan-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-bold text-sm rounded-xl shadow-xl shadow-teal-500/20 flex items-center justify-center gap-2 animate-shimmer transition-all"
+            >
+              <span>Proceed to Clinical Intake</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
-
-      {/* Footer Action */}
-      <div className="mt-4 pt-6 border-t border-[#E5E7EB] flex justify-end">
-        <button 
-          onClick={() => setLocation('/intake')}
-          disabled={!hasFiles || !isUploadComplete}
-          className={`px-6 py-3 rounded-md font-medium text-white transition-colors ${
-            (!hasFiles || !isUploadComplete) 
-              ? 'bg-[#E5E7EB] text-[#6B7280] cursor-not-allowed' 
-              : 'bg-[#16A34A] hover:bg-green-700 shadow-sm'
-          }`}
-        >
-          Proceed to Patient Intake
-        </button>
-      </div>
     </div>
   );
 }
