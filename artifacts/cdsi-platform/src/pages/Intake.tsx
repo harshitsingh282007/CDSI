@@ -178,13 +178,23 @@ export default function Intake() {
 
   const isFormValid = analysisType !== null;
 
-  const onSubmit = () => {
-    if (!analysisType) return;
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const onSubmit = async () => {
+    if (!analysisType || isSubmitting) return;
+    setIsSubmitting(true);
+    setErrorMsg('');
 
     const targetJobId = jobId || `job-intake-${Date.now()}`;
-    if (!jobId) setJobId(targetJobId);
+    setJobId(targetJobId);
+    sessionStorage.setItem('cdsi_job_id', targetJobId);
 
-    const intakeData: IntakeFormData & { patientName?: string | null } = {
+    const adaptiveQA = Object.entries(adaptiveAnswers).map(([idx, ans]) => ({
+      question: adaptiveQuestions[parseInt(idx, 10)] || `Question ${parseInt(idx, 10) + 1}`,
+      answer: ans
+    }));
+
+    const intakeData: Record<string, unknown> = {
       analysisType,
       patientName: patientName || null,
       chiefComplaint: chiefComplaint || null,
@@ -201,6 +211,7 @@ export default function Intake() {
       familyHistory: familyHistory.length > 0 ? familyHistory : undefined,
       smoking,
       alcohol,
+      adaptiveQA: adaptiveQA.length > 0 ? adaptiveQA : undefined,
       phq9Answers: phq9Answers.some(a => a > -1) ? phq9Answers.map(a => a === -1 ? 0 : a) : undefined,
       gad7Answers: gad7Answers.some(a => a > -1) ? gad7Answers.map(a => a === -1 ? 0 : a) : undefined,
       sleepQuality: sleepQuality ? parseInt(sleepQuality, 10) : null,
@@ -211,16 +222,26 @@ export default function Intake() {
       mentalHealthDiagnosisDetails: previousMentalHealthDiagnosis ? mentalHealthDiagnosisDetails : null
     };
 
-    setErrorMsg('');
-    startAnalysis.mutate({ data: { jobId: targetJobId, intakeData, language } }, {
-      onSuccess: () => {
-        setLocation('/processing');
-      },
-      onError: (err: any) => {
-        console.error('Analysis start failed:', err);
-        setErrorMsg(err.message || 'Failed to start clinical analysis. Please try again.');
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const res = await fetch(`${apiUrl}/api/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId: targetJobId, intakeData, language })
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || errJson.message || `Server returned status ${res.status}`);
       }
-    });
+
+      setLocation('/processing');
+    } catch (err: any) {
+      console.error('Analysis start failed:', err);
+      setErrorMsg(err.message || 'Failed to start clinical analysis. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -779,19 +800,17 @@ export default function Intake() {
       <div className="fixed bottom-0 left-0 right-0 md:left-[240px] bg-white/80 backdrop-blur-md border-t border-[#E5E7EB] p-4 flex justify-center z-40">
         <div className="w-full max-w-[1100px] flex justify-end">
           <button 
+            type="button"
             onClick={onSubmit}
-            disabled={!isFormValid || startAnalysis.isPending}
+            disabled={!isFormValid || isSubmitting}
             className={`px-8 py-3 rounded-md font-medium text-white transition-colors flex items-center gap-2 ${
-              (!isFormValid) 
+              (!isFormValid || isSubmitting) 
                 ? 'bg-[#E5E7EB] text-[#6B7280] cursor-not-allowed' 
                 : 'bg-[#16A34A] hover:bg-green-700 shadow-sm cursor-pointer'
             }`}
           >
-            {startAnalysis.isPending && (
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+            {isSubmitting && (
+              <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin mr-2" />
             )}
             Start Clinical Analysis
           </button>

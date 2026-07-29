@@ -216,6 +216,7 @@ ${intakeData.alcohol ? `Alcohol: ${intakeData.alcohol}` : ""}
 ${scores ? `PHQ-9 Score: ${scores.phq9}/27 | GAD-7 Score: ${scores.gad7}/21` : ""}
 ${intakeData.lifeStressors && intakeData.lifeStressorsDetails ? `Life Stressors: ${intakeData.lifeStressorsDetails}` : ""}
 ${intakeData.previousMentalHealthDiagnosis ? `Prior Mental Health History: ${intakeData.mentalHealthDiagnosisDetails || "Yes"}` : ""}
+${(intakeData as any).adaptiveQA?.length ? `ADAPTIVE AI CASE QUESTIONS & PATIENT ANSWERS:\n${((intakeData as any).adaptiveQA as Array<{ question: string; answer: string }>).map((item, i) => `Q${i+1}: ${item.question}\nPatient Answer: ${item.answer || 'Not answered'}`).join('\n')}` : ""}
 
 EXTRACTED LAB PARAMETERS (${labParameters.length} total):
 ${labParameters.length > 0 ? JSON.stringify(labParameters, null, 2) : "No lab parameters extracted from documents."}
