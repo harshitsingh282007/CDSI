@@ -262,25 +262,21 @@ export default function Intake() {
           <button
             type="button"
             onClick={() => setAnalysisType('adaptive')}
-            className={`p-6 border rounded-xl flex flex-col items-center text-center gap-3 transition-all relative overflow-hidden ${
-              analysisType === 'adaptive' ? 'border-emerald-600 bg-[#F0FDF4] shadow-md ring-2 ring-emerald-600' : 'border-emerald-200/60 bg-gradient-to-b from-emerald-50/40 to-white hover:border-emerald-300'
+            className={`p-6 border rounded-xl flex flex-col items-center text-center justify-center gap-3 transition-all ${
+              analysisType === 'adaptive'
+                ? 'border-emerald-600 bg-[#F0FDF4] shadow-md ring-2 ring-emerald-600'
+                : 'border-emerald-200/80 bg-white hover:border-emerald-300 hover:bg-emerald-50/30'
             }`}
           >
-            <span className="bg-emerald-600 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
-              ✨ Autonomous AI
+            <div className={`w-12 h-12 rounded-full relative flex items-center justify-center transition-transform ${
+              analysisType === 'adaptive' ? 'bg-emerald-600 text-white shadow-md' : 'bg-emerald-50 text-emerald-600 border border-emerald-200/80'
+            }`}>
+              <Activity className="w-6 h-6" />
+              <Sparkles className="w-4 h-4 absolute -top-1 -right-1 text-amber-400 fill-amber-400 drop-shadow-xs" />
+            </div>
+            <span className={`font-bold text-base ${analysisType === 'adaptive' ? 'text-emerald-700' : 'text-gray-900'}`}>
+              Adaptive AI Analysis
             </span>
-            <div className={`p-3 rounded-full flex gap-1.5 ${analysisType === 'adaptive' ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-50 text-emerald-600'}`}>
-              <Sparkles className="w-6 h-6 text-amber-500" />
-              <Activity className="w-6 h-6 text-emerald-600" />
-            </div>
-            <div>
-              <span className={`font-bold text-base block ${analysisType === 'adaptive' ? 'text-emerald-700' : 'text-gray-900'}`}>
-                Adaptive AI Analysis
-              </span>
-              <span className="text-xs text-gray-500 font-medium mt-1 block">
-                Smart AI Triage & Case Adaptive QA
-              </span>
-            </div>
           </button>
         </div>
       </div>
