@@ -1,0 +1,928 @@
+{
+  "version": "1.0.0",
+  "entries": [
+    {
+      "canonicalKey": "wbc",
+      "displayName": "WBC (Total)",
+      "panel": "CBC",
+      "synonyms": [
+        "wbc",
+        "white blood cell",
+        "white blood cells",
+        "total leukocyte count",
+        "total leucocyte count",
+        "tlc",
+        "wbc (total)",
+        "total wbc",
+        "leukocytes",
+        "leucocytes",
+        "white blood cell count"
+      ],
+      "targetUnit": "cells/µL",
+      "unitConversions": {
+        "10^3/ul": 1000,
+        "10^3/µl": 1000,
+        "k/ul": 1000,
+        "k/µl": 1000,
+        "k/mm3": 1000,
+        "/ul": 1,
+        "cells/ul": 1,
+        "cells/µl": 1,
+        "10^9/l": 1000,
+        "x10^3/ul": 1000
+      },
+      "defaultReferenceRange": "4,500 - 11,000 cells/µL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "neutrophils",
+      "displayName": "Neutrophils",
+      "panel": "CBC",
+      "synonyms": [
+        "neutrophils",
+        "neutrophil",
+        "neutrophils %",
+        "neutrophil count",
+        "absolute neutrophil count",
+        "anc",
+        "polymorphs"
+      ],
+      "targetUnit": "%",
+      "unitConversions": {
+        "%": 1
+      },
+      "defaultReferenceRange": "50 - 70 %",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "lymphocytes",
+      "displayName": "Lymphocytes",
+      "panel": "CBC",
+      "synonyms": [
+        "lymphocytes",
+        "lymphocyte",
+        "lymphocytes %",
+        "lymphocyte count",
+        "absolute lymphocyte count"
+      ],
+      "targetUnit": "%",
+      "unitConversions": {
+        "%": 1
+      },
+      "defaultReferenceRange": "20 - 40 %",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "monocytes",
+      "displayName": "Monocytes",
+      "panel": "CBC",
+      "synonyms": [
+        "monocytes",
+        "monocyte",
+        "monocytes %"
+      ],
+      "targetUnit": "%",
+      "unitConversions": {
+        "%": 1
+      },
+      "defaultReferenceRange": "2 - 8 %",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "eosinophils",
+      "displayName": "Eosinophils",
+      "panel": "CBC",
+      "synonyms": [
+        "eosinophils",
+        "eosinophil",
+        "eosinophils %"
+      ],
+      "targetUnit": "%",
+      "unitConversions": {
+        "%": 1
+      },
+      "defaultReferenceRange": "1 - 6 %",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "basophils",
+      "displayName": "Basophils",
+      "panel": "CBC",
+      "synonyms": [
+        "basophils",
+        "basophil",
+        "basophils %"
+      ],
+      "targetUnit": "%",
+      "unitConversions": {
+        "%": 1
+      },
+      "defaultReferenceRange": "0 - 1 %",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "hemoglobin",
+      "displayName": "Hemoglobin",
+      "panel": "CBC",
+      "synonyms": [
+        "hemoglobin",
+        "haemoglobin",
+        "hb",
+        "hgb",
+        "total hemoglobin",
+        "hb level"
+      ],
+      "targetUnit": "g/dL",
+      "unitConversions": {
+        "g/dl": 1,
+        "g/l": 0.1,
+        "g%": 1,
+        "mmol/l": 1.61
+      },
+      "defaultReferenceRange": "13.5 - 17.5 g/dL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "hematocrit",
+      "displayName": "Hematocrit",
+      "panel": "CBC",
+      "synonyms": [
+        "hematocrit",
+        "haematocrit",
+        "hct",
+        "pcv",
+        "packed cell volume"
+      ],
+      "targetUnit": "%",
+      "unitConversions": {
+        "%": 1
+      },
+      "defaultReferenceRange": "41 - 53 %",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "platelets",
+      "displayName": "Platelet Count",
+      "panel": "CBC",
+      "synonyms": [
+        "platelets",
+        "platelet count",
+        "plt",
+        "platelet",
+        "total platelet count"
+      ],
+      "targetUnit": "cells/µL",
+      "unitConversions": {
+        "10^3/ul": 1000,
+        "k/ul": 1000,
+        "k/µl": 1000,
+        "lakhs/ul": 100000,
+        "lakh/ul": 100000,
+        "cells/ul": 1,
+        "cells/µl": 1,
+        "10^9/l": 1000
+      },
+      "defaultReferenceRange": "150,000 - 400,000 cells/µL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "rbc",
+      "displayName": "RBC Count",
+      "panel": "CBC",
+      "synonyms": [
+        "rbc",
+        "rbc count",
+        "red blood cell",
+        "red blood cells",
+        "total rbc count",
+        "erythrocytes"
+      ],
+      "targetUnit": "M/µL",
+      "unitConversions": {
+        "m/ul": 1,
+        "m/µl": 1,
+        "10^6/ul": 1,
+        "10^12/l": 1,
+        "mil/ul": 1
+      },
+      "defaultReferenceRange": "4.5 - 6.0 M/µL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "mcv",
+      "displayName": "MCV",
+      "panel": "CBC",
+      "synonyms": [
+        "mcv",
+        "mean corpuscular volume"
+      ],
+      "targetUnit": "fL",
+      "unitConversions": {
+        "fl": 1
+      },
+      "defaultReferenceRange": "80 - 100 fL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "mch",
+      "displayName": "MCH",
+      "panel": "CBC",
+      "synonyms": [
+        "mch",
+        "mean corpuscular hemoglobin"
+      ],
+      "targetUnit": "pg",
+      "unitConversions": {
+        "pg": 1
+      },
+      "defaultReferenceRange": "27 - 33 pg",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "mchc",
+      "displayName": "MCHC",
+      "panel": "CBC",
+      "synonyms": [
+        "mchc",
+        "mean corpuscular hemoglobin concentration"
+      ],
+      "targetUnit": "g/dL",
+      "unitConversions": {
+        "g/dl": 1,
+        "%": 1
+      },
+      "defaultReferenceRange": "32 - 36 g/dL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "total_bilirubin",
+      "displayName": "Total Bilirubin",
+      "panel": "LFT",
+      "synonyms": [
+        "total bilirubin",
+        "bilirubin total",
+        "s. bilirubin (total)",
+        "serum bilirubin total",
+        "t. bilirubin",
+        "t bilirubin",
+        "t.bil"
+      ],
+      "targetUnit": "mg/dL",
+      "unitConversions": {
+        "mg/dl": 1,
+        "umol/l": 0.0585,
+        "µmol/l": 0.0585
+      },
+      "defaultReferenceRange": "0.1 - 1.2 mg/dL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "direct_bilirubin",
+      "displayName": "Direct Bilirubin",
+      "panel": "LFT",
+      "synonyms": [
+        "direct bilirubin",
+        "bilirubin direct",
+        "s. bilirubin (direct)",
+        "conjugated bilirubin",
+        "d. bilirubin",
+        "d bilirubin",
+        "d.bil"
+      ],
+      "targetUnit": "mg/dL",
+      "unitConversions": {
+        "mg/dl": 1,
+        "umol/l": 0.0585,
+        "µmol/l": 0.0585
+      },
+      "defaultReferenceRange": "0.0 - 0.3 mg/dL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "indirect_bilirubin",
+      "displayName": "Indirect Bilirubin",
+      "panel": "LFT",
+      "synonyms": [
+        "indirect bilirubin",
+        "bilirubin indirect",
+        "s. bilirubin (indirect)",
+        "unconjugated bilirubin",
+        "ind. bilirubin"
+      ],
+      "targetUnit": "mg/dL",
+      "unitConversions": {
+        "mg/dl": 1,
+        "umol/l": 0.0585,
+        "µmol/l": 0.0585
+      },
+      "defaultReferenceRange": "0.1 - 0.8 mg/dL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "ast",
+      "displayName": "AST (SGOT)",
+      "panel": "LFT",
+      "synonyms": [
+        "ast",
+        "sgot",
+        "ast (sgot)",
+        "sgot (ast)",
+        "aspartate aminotransferase",
+        "aspartate transaminase",
+        "serum glutamic oxaloacetic transaminase"
+      ],
+      "targetUnit": "IU/L",
+      "unitConversions": {
+        "iu/l": 1,
+        "u/l": 1,
+        "ukat/l": 60
+      },
+      "defaultReferenceRange": "10 - 40 IU/L",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "alt",
+      "displayName": "ALT (SGPT)",
+      "panel": "LFT",
+      "synonyms": [
+        "alt",
+        "sgpt",
+        "alt (sgpt)",
+        "sgpt (alt)",
+        "alanine aminotransferase",
+        "alanine transaminase",
+        "serum glutamic pyruvic transaminase"
+      ],
+      "targetUnit": "IU/L",
+      "unitConversions": {
+        "iu/l": 1,
+        "u/l": 1,
+        "ukat/l": 60
+      },
+      "defaultReferenceRange": "7 - 56 IU/L",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "alp",
+      "displayName": "Alkaline Phosphatase (ALP)",
+      "panel": "LFT",
+      "synonyms": [
+        "alp",
+        "alkaline phosphatase",
+        "alk phos",
+        "alk. phosphatase",
+        "s. alkaline phosphatase"
+      ],
+      "targetUnit": "IU/L",
+      "unitConversions": {
+        "iu/l": 1,
+        "u/l": 1
+      },
+      "defaultReferenceRange": "30 - 120 IU/L",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "albumin",
+      "displayName": "Albumin",
+      "panel": "LFT",
+      "synonyms": [
+        "albumin",
+        "serum albumin",
+        "s. albumin"
+      ],
+      "targetUnit": "g/dL",
+      "unitConversions": {
+        "g/dl": 1,
+        "g/l": 0.1
+      },
+      "defaultReferenceRange": "3.5 - 5.5 g/dL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "total_protein",
+      "displayName": "Total Protein",
+      "panel": "LFT",
+      "synonyms": [
+        "total protein",
+        "protein total",
+        "serum protein",
+        "s. protein",
+        "t. protein"
+      ],
+      "targetUnit": "g/dL",
+      "unitConversions": {
+        "g/dl": 1,
+        "g/l": 0.1
+      },
+      "defaultReferenceRange": "6.0 - 8.0 g/dL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "globulin",
+      "displayName": "Globulin",
+      "panel": "LFT",
+      "synonyms": [
+        "globulin",
+        "serum globulin",
+        "s. globulin"
+      ],
+      "targetUnit": "g/dL",
+      "unitConversions": {
+        "g/dl": 1,
+        "g/l": 0.1
+      },
+      "defaultReferenceRange": "2.0 - 3.5 g/dL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "creatinine",
+      "displayName": "Serum Creatinine",
+      "panel": "KFT",
+      "synonyms": [
+        "creatinine",
+        "serum creatinine",
+        "s. creatinine",
+        "blood creatinine",
+        "creat"
+      ],
+      "targetUnit": "mg/dL",
+      "unitConversions": {
+        "mg/dl": 1,
+        "umol/l": 0.0113,
+        "µmol/l": 0.0113
+      },
+      "defaultReferenceRange": "0.7 - 1.3 mg/dL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "bun",
+      "displayName": "Blood Urea Nitrogen (BUN)",
+      "panel": "KFT",
+      "synonyms": [
+        "bun",
+        "blood urea nitrogen",
+        "urea nitrogen"
+      ],
+      "targetUnit": "mg/dL",
+      "unitConversions": {
+        "mg/dl": 1,
+        "mmol/l": 2.8
+      },
+      "defaultReferenceRange": "7 - 20 mg/dL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "blood_urea",
+      "displayName": "Blood Urea",
+      "panel": "KFT",
+      "synonyms": [
+        "blood urea",
+        "urea",
+        "serum urea",
+        "s. urea"
+      ],
+      "targetUnit": "mg/dL",
+      "unitConversions": {
+        "mg/dl": 1,
+        "mmol/l": 6.0
+      },
+      "defaultReferenceRange": "15 - 45 mg/dL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "uric_acid",
+      "displayName": "Uric Acid",
+      "panel": "KFT",
+      "synonyms": [
+        "uric acid",
+        "serum uric acid",
+        "s. uric acid"
+      ],
+      "targetUnit": "mg/dL",
+      "unitConversions": {
+        "mg/dl": 1,
+        "umol/l": 0.0168,
+        "µmol/l": 0.0168
+      },
+      "defaultReferenceRange": "3.5 - 8.5 mg/dL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "egfr",
+      "displayName": "eGFR",
+      "panel": "KFT",
+      "synonyms": [
+        "egfr",
+        "estimated gfr",
+        "gfr",
+        "egfr (ckd-epi)"
+      ],
+      "targetUnit": "mL/min/1.73m²",
+      "unitConversions": {
+        "ml/min/1.73m2": 1,
+        "ml/min/1.73m²": 1,
+        "ml/min": 1
+      },
+      "defaultReferenceRange": "90 - 140 mL/min/1.73m²",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "sodium",
+      "displayName": "Serum Sodium",
+      "panel": "Electrolytes",
+      "synonyms": [
+        "sodium",
+        "serum sodium",
+        "s. sodium",
+        "na",
+        "na+"
+      ],
+      "targetUnit": "mmol/L",
+      "unitConversions": {
+        "mmol/l": 1,
+        "meq/l": 1
+      },
+      "defaultReferenceRange": "135 - 155 mmol/L",
+      "valueTolerancePct": 3
+    },
+    {
+      "canonicalKey": "potassium",
+      "displayName": "Serum Potassium",
+      "panel": "Electrolytes",
+      "synonyms": [
+        "potassium",
+        "serum potassium",
+        "s. potassium",
+        "k",
+        "k+"
+      ],
+      "targetUnit": "mmol/L",
+      "unitConversions": {
+        "mmol/l": 1,
+        "meq/l": 1
+      },
+      "defaultReferenceRange": "3.5 - 5.5 mmol/L",
+      "valueTolerancePct": 3
+    },
+    {
+      "canonicalKey": "chloride",
+      "displayName": "Serum Chloride",
+      "panel": "Electrolytes",
+      "synonyms": [
+        "chloride",
+        "serum chloride",
+        "s. chloride",
+        "cl",
+        "cl-"
+      ],
+      "targetUnit": "mmol/L",
+      "unitConversions": {
+        "mmol/l": 1,
+        "meq/l": 1
+      },
+      "defaultReferenceRange": "97 - 111 mmol/L",
+      "valueTolerancePct": 3
+    },
+    {
+      "canonicalKey": "calcium",
+      "displayName": "Serum Calcium",
+      "panel": "Electrolytes",
+      "synonyms": [
+        "calcium",
+        "serum calcium",
+        "s. calcium",
+        "ca",
+        "ca2+"
+      ],
+      "targetUnit": "mg/dL",
+      "unitConversions": {
+        "mg/dl": 1,
+        "mmol/l": 4.01
+      },
+      "defaultReferenceRange": "8.4 - 10.2 mg/dL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "fasting_glucose",
+      "displayName": "Fasting Blood Sugar",
+      "panel": "Glucose",
+      "synonyms": [
+        "fasting blood sugar",
+        "fasting glucose",
+        "fbs",
+        "fasting blood glucose",
+        "fbg"
+      ],
+      "targetUnit": "mg/dL",
+      "unitConversions": {
+        "mg/dl": 1,
+        "mmol/l": 18.018
+      },
+      "defaultReferenceRange": "70 - 100 mg/dL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "random_glucose",
+      "displayName": "Random Blood Sugar",
+      "panel": "Glucose",
+      "synonyms": [
+        "random blood sugar",
+        "random glucose",
+        "rbs",
+        "random blood glucose",
+        "rbg"
+      ],
+      "targetUnit": "mg/dL",
+      "unitConversions": {
+        "mg/dl": 1,
+        "mmol/l": 18.018
+      },
+      "defaultReferenceRange": "70 - 140 mg/dL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "postprandial_glucose",
+      "displayName": "Post Prandial Blood Sugar",
+      "panel": "Glucose",
+      "synonyms": [
+        "post prandial blood sugar",
+        "ppbs",
+        "post prandial glucose",
+        "pp glucose",
+        "2hr pp glucose"
+      ],
+      "targetUnit": "mg/dL",
+      "unitConversions": {
+        "mg/dl": 1,
+        "mmol/l": 18.018
+      },
+      "defaultReferenceRange": "70 - 140 mg/dL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "hba1c",
+      "displayName": "HbA1c (Glycated Hemoglobin)",
+      "panel": "Glucose",
+      "synonyms": [
+        "hba1c",
+        "glycated hemoglobin",
+        "glycosylated hemoglobin",
+        "a1c",
+        "hemoglobin a1c"
+      ],
+      "targetUnit": "%",
+      "unitConversions": {
+        "%": 1,
+        "mmol/mol": 0.0915
+      },
+      "defaultReferenceRange": "4.0 - 5.6 %",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "tsh",
+      "displayName": "TSH (Thyroid Stimulating Hormone)",
+      "panel": "Thyroid",
+      "synonyms": [
+        "tsh",
+        "thyroid stimulating hormone",
+        "s. tsh",
+        "serum tsh"
+      ],
+      "targetUnit": "uIU/mL",
+      "unitConversions": {
+        "uiu/ml": 1,
+        "uu/ml": 1,
+        "mcu/ml": 1,
+        "miu/l": 1
+      },
+      "defaultReferenceRange": "0.7 - 6.4 uIU/mL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "free_t3",
+      "displayName": "Free T3",
+      "panel": "Thyroid",
+      "synonyms": [
+        "free t3",
+        "ft3",
+        "free triiodothyronine"
+      ],
+      "targetUnit": "pg/mL",
+      "unitConversions": {
+        "pg/ml": 1,
+        "pmol/l": 0.65
+      },
+      "defaultReferenceRange": "2.0 - 4.4 pg/mL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "free_t4",
+      "displayName": "Free T4",
+      "panel": "Thyroid",
+      "synonyms": [
+        "free t4",
+        "ft4",
+        "free thyroxine"
+      ],
+      "targetUnit": "ng/dL",
+      "unitConversions": {
+        "ng/dl": 1,
+        "pmol/l": 0.0777
+      },
+      "defaultReferenceRange": "0.8 - 1.8 ng/dL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "total_t3",
+      "displayName": "Total T3",
+      "panel": "Thyroid",
+      "synonyms": [
+        "total t3",
+        "t3",
+        "triiodothyronine"
+      ],
+      "targetUnit": "ng/dL",
+      "unitConversions": {
+        "ng/dl": 1,
+        "nmol/l": 65.1
+      },
+      "defaultReferenceRange": "80 - 200 ng/dL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "total_t4",
+      "displayName": "Total T4",
+      "panel": "Thyroid",
+      "synonyms": [
+        "total t4",
+        "t4",
+        "thyroxine"
+      ],
+      "targetUnit": "ug/dL",
+      "unitConversions": {
+        "ug/dl": 1,
+        "µg/dl": 1,
+        "nmol/l": 0.0777
+      },
+      "defaultReferenceRange": "5.1 - 14.1 ug/dL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "pt",
+      "displayName": "Prothrombin Time (PT)",
+      "panel": "Coagulation",
+      "synonyms": [
+        "pt",
+        "prothrombin time",
+        "pt (prothrombin time)"
+      ],
+      "targetUnit": "sec",
+      "unitConversions": {
+        "sec": 1,
+        "seconds": 1,
+        "s": 1
+      },
+      "defaultReferenceRange": "12 - 14 sec",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "inr",
+      "displayName": "INR",
+      "panel": "Coagulation",
+      "synonyms": [
+        "inr",
+        "international normalized ratio",
+        "coagulation inr"
+      ],
+      "targetUnit": "",
+      "unitConversions": {
+        "": 1
+      },
+      "defaultReferenceRange": "0.8 - 1.1",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "aptt",
+      "displayName": "aPTT",
+      "panel": "Coagulation",
+      "synonyms": [
+        "aptt",
+        "activated partial thromboplastin time"
+      ],
+      "targetUnit": "sec",
+      "unitConversions": {
+        "sec": 1,
+        "seconds": 1,
+        "s": 1
+      },
+      "defaultReferenceRange": "25 - 35 sec",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "vitamin_d",
+      "displayName": "Vitamin D (25-Hydroxy)",
+      "panel": "Vitamins",
+      "synonyms": [
+        "vitamin d",
+        "vitamin d (25 hydroxy)",
+        "vit d",
+        "25-oh vitamin d",
+        "25-hydroxy vitamin d"
+      ],
+      "targetUnit": "ng/mL",
+      "unitConversions": {
+        "ng/ml": 1,
+        "nmol/l": 0.4
+      },
+      "defaultReferenceRange": "30 - 100 ng/mL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "vitamin_b12",
+      "displayName": "Vitamin B12",
+      "panel": "Vitamins",
+      "synonyms": [
+        "vitamin b12",
+        "vit b12",
+        "b12",
+        "cyanocobalamin"
+      ],
+      "targetUnit": "pg/mL",
+      "unitConversions": {
+        "pg/ml": 1,
+        "pmol/l": 1.355
+      },
+      "defaultReferenceRange": "200 - 1,100 pg/mL",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "crp",
+      "displayName": "C-Reactive Protein (CRP)",
+      "panel": "Inflammatory",
+      "synonyms": [
+        "crp",
+        "c-reactive protein",
+        "c reactive protein",
+        "hs-crp"
+      ],
+      "targetUnit": "mg/L",
+      "unitConversions": {
+        "mg/l": 1,
+        "mg/dl": 10
+      },
+      "defaultReferenceRange": "< 5 mg/L",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "esr",
+      "displayName": "Erythrocyte Sedimentation Rate (ESR)",
+      "panel": "Inflammatory",
+      "synonyms": [
+        "esr",
+        "erythrocyte sedimentation rate",
+        "sed rate"
+      ],
+      "targetUnit": "mm/hr",
+      "unitConversions": {
+        "mm/hr": 1,
+        "mm/h": 1
+      },
+      "defaultReferenceRange": "0 - 20 mm/hr",
+      "valueTolerancePct": 5
+    },
+    {
+      "canonicalKey": "widal_o",
+      "displayName": "Salmonella Typhi O (Widal)",
+      "panel": "Infectious",
+      "synonyms": [
+        "salmonella typhi o",
+        "salmonella typhi o (somatic)",
+        "widal o",
+        "typhi o"
+      ],
+      "targetUnit": "Titer",
+      "unitConversions": {
+        "titer": 1
+      },
+      "defaultReferenceRange": "< 1:80 (Negative)",
+      "valueTolerancePct": 0
+    },
+    {
+      "canonicalKey": "widal_h",
+      "displayName": "Salmonella Typhi H (Widal)",
+      "panel": "Infectious",
+      "synonyms": [
+        "salmonella typhi h",
+        "salmonella typhi h (flagellar)",
+        "widal h",
+        "typhi h"
+      ],
+      "targetUnit": "Titer",
+      "unitConversions": {
+        "titer": 1
+      },
+      "defaultReferenceRange": "< 1:80 (Negative)",
+      "valueTolerancePct": 0
+    }
+  ]
+}

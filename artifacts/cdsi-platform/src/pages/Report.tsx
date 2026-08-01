@@ -44,15 +44,54 @@ interface RiskAssessment {
   urgency: 'routine' | 'soon' | 'urgent' | 'emergency';
 }
 
+interface SourceExtraction {
+  rawName: string;
+  rawValue: string;
+  rawUnit: string | null;
+  sourceDocument?: string | null;
+  sourcePage?: number | null;
+}
+
+interface ConflictDetails {
+  rawValues: string[];
+  sourceExtractions: SourceExtraction[];
+  reason: string;
+}
+
+interface LabSummaryStats {
+  totalAnalyzed: number;
+  totalExtractedRaw: number;
+  mergedCount: number;
+  abnormalCount: number;
+  criticalCount: number;
+  normalCount: number;
+  conflictingCount: number;
+}
+
+interface ExtendedLabParameter {
+  name: string;
+  value: string;
+  unit?: string | null;
+  referenceRange?: string | null;
+  status: string;
+  interpretation?: string | null;
+  panel?: string | null;
+  canonicalKey?: string;
+  isConflicting?: boolean;
+  conflictDetails?: ConflictDetails | null;
+  sourceExtractions?: SourceExtraction[];
+}
+
 interface ExtendedReport {
   jobId: string;
   patientSummary: { name?: string | null; age?: number | null; sex?: string | null; bmi?: number | null; dateOfAnalysis: string; analysisType: string };
-  labParameters: Array<{ name: string; value: string; unit?: string | null; referenceRange?: string | null; status: string; interpretation?: string | null; panel?: string | null }>;
+  labParameters: ExtendedLabParameter[];
   prescriptions: Array<{ medicineName: string; dosage?: string | null; frequency?: string | null; duration?: string | null; timing?: string | null; specialInstructions?: string | null }>;
   findings: ExtendedFinding[];
   organSystems: Array<{ system: string; status: string; summary?: string | null }>;
   criticalValues: string[];
   psychiatricSummary?: { phq9Score?: number | null; phq9Interpretation?: string | null; gad7Score?: number | null; gad7Interpretation?: string | null; showMentalHealthBanner?: boolean; narrativeSummary?: string | null } | null;
+  summaryStats?: LabSummaryStats;
   clinicalConclusion?: string | null;
   possibleConditions?: string[];
   riskAssessment?: RiskAssessment | null;
@@ -66,7 +105,8 @@ interface ExtendedReport {
 type SortConfig = { key: string; direction: 'asc' | 'desc' } | null;
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-function getStatusBadge(status: string) {
+function getStatusBadge(status: string, isConflicting?: boolean) {
+  if (isConflicting) return 'bg-amber-100 text-amber-900 border-amber-400 font-bold';
   switch (status) {
     case 'critical':   return 'bg-red-50 text-red-700 border-red-300';
     case 'high':       return 'bg-amber-50 text-amber-700 border-amber-300';
@@ -466,9 +506,13 @@ export default function Report() {
   const possibleDifferentials = safeFindings.filter(f => f.category === 'possible' || f.category === 'differential');
   const recommendations = safeFindings.filter(f => f.category === 'recommendation');
 
-  const abnormalCount = safeLabParameters.filter(l => l.status !== 'normal').length;
-  const criticalCount = safeLabParameters.filter(l => l.status === 'critical').length;
-  const normalCount = safeLabParameters.filter(l => l.status === 'normal').length;
+  const conflictingLabs = safeLabParameters.filter(l => l.isConflicting);
+  const nonConflictingLabs = safeLabParameters.filter(l => !l.isConflicting);
+
+  const abnormalCount = report.summaryStats?.abnormalCount ?? nonConflictingLabs.filter(l => l.status !== 'normal').length;
+  const criticalCount = report.summaryStats?.criticalCount ?? nonConflictingLabs.filter(l => l.status === 'critical').length;
+  const normalCount = report.summaryStats?.normalCount ?? nonConflictingLabs.filter(l => l.status === 'normal').length;
+  const totalAnalyzed = report.summaryStats?.totalAnalyzed ?? nonConflictingLabs.length;
 
   const riskColors = report.riskAssessment ? getRiskColors(report.riskAssessment.level) : null;
 
@@ -525,6 +569,43 @@ export default function Report() {
         <div className="bg-red-600 text-white px-5 py-4 rounded-xl flex items-center justify-center gap-3 shadow">
           <AlertTriangle className="w-6 h-6 flex-shrink-0" />
           <p className="font-black text-2xl tracking-tight">{safeCriticalValues.length} CRITICAL ALERTS</p>
+        </div>
+      )}
+
+      {/* ── QA Conflict Resolution Panel ── */}
+      {conflictingLabs.length > 0 && (
+        <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-2xl p-5 shadow-lg border border-amber-600">
+          <div className="flex items-center gap-3 pb-3 border-b border-amber-400/50">
+            <ShieldAlert className="w-6 h-6 text-white flex-shrink-0" />
+            <div>
+              <h2 className="font-extrabold text-lg tracking-tight">QA Review Required: {conflictingLabs.length} Conflicting Extraction(s)</h2>
+              <p className="text-xs text-amber-100 mt-0.5">Contradictory values detected for the same canonical test across source extractions. Human verification recommended.</p>
+            </div>
+          </div>
+          <div className="mt-4 flex flex-col gap-3">
+            {conflictingLabs.map((lab, i) => (
+              <div key={i} className="bg-white text-gray-900 rounded-xl p-4 shadow-sm border border-amber-200 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-sm text-amber-900">{lab.name}</span>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase bg-amber-100 text-amber-800 border border-amber-300">
+                    Conflict Detected
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 font-mono bg-amber-50 p-2 rounded border border-amber-100">
+                  Raw Values: {lab.conflictDetails?.rawValues.join('  VS  ') || lab.value}
+                </p>
+                {lab.sourceExtractions && lab.sourceExtractions.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {lab.sourceExtractions.map((src, sj) => (
+                      <span key={sj} className="text-[11px] bg-gray-100 text-gray-700 px-2 py-1 rounded border font-mono">
+                        Source #{sj + 1}: "{src.rawName}" = {src.rawValue} {src.rawUnit || ''}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -907,9 +988,16 @@ export default function Report() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredLabs.map((lab, i) => (
-                  <tr key={i} className={`hover:bg-gray-50 transition-colors ${lab.status === 'critical' ? 'bg-red-50' : (lab.status === 'high' || lab.status === 'low') ? 'bg-amber-50' : ''}`}>
+                  <tr key={i} className={`hover:bg-gray-50 transition-colors ${lab.isConflicting ? 'bg-amber-100/60' : lab.status === 'critical' ? 'bg-red-50' : (lab.status === 'high' || lab.status === 'low') ? 'bg-amber-50' : ''}`}>
                     <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900 text-sm">{lab.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-gray-900 text-sm">{lab.name}</p>
+                        {lab.sourceExtractions && lab.sourceExtractions.length > 1 && (
+                          <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded font-mono font-medium" title={lab.sourceExtractions.map(s => `${s.rawName}: ${s.rawValue}`).join('\n')}>
+                            Merged ({lab.sourceExtractions.length})
+                          </span>
+                        )}
+                      </div>
                       {lab.panel && <p className="text-xs text-gray-400 mt-0.5">{lab.panel}</p>}
                     </td>
                     <td className="px-4 py-3">
@@ -922,8 +1010,8 @@ export default function Report() {
                     <td className="px-4 py-3 text-sm text-gray-500 font-mono">{lab.referenceRange || '—'}</td>
                     <td className="px-4 py-3"><LabDeviationBar status={lab.status} /></td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border uppercase tracking-wide ${getStatusBadge(lab.status)}`}>
-                        {lab.status}
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border uppercase tracking-wide ${getStatusBadge(lab.status, lab.isConflicting)}`}>
+                        {lab.isConflicting ? 'CONFLICTING' : lab.status}
                       </span>
                     </td>
                   </tr>

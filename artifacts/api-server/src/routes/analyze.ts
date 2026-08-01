@@ -106,7 +106,7 @@ router.post("/analyze", async (req: Request, res: Response) => {
         });
 
         const extractionStart = Date.now();
-        const { labParameters, prescriptions, patientName, patientAge, patientSex, extractionErrors } =
+        const { labParameters, prescriptions, patientName, patientAge, patientSex, extractionErrors, summaryStats } =
           await extractStructuredData(job.medicalContext!, language, (job as any).images, (job as any).pageTexts);
         stageTimings.extraction = Date.now() - extractionStart;
 
@@ -114,7 +114,7 @@ router.post("/analyze", async (req: Request, res: Response) => {
           structuredData: { labParameters, prescriptions },
           stage: "reasoning",
           progress: 72,
-          message: `Found ${labParameters.length} lab parameters, ${prescriptions.length} prescriptions. Running clinical reasoning...`,
+          message: `Resolved ${summaryStats.totalAnalyzed} lab parameters (${summaryStats.mergedCount} merged, ${summaryStats.conflictingCount} conflicting), ${prescriptions.length} prescriptions. Running clinical reasoning...`,
         });
 
         const intakeTyped = intakeData as unknown as Parameters<typeof performClinicalReasoning>[3];
@@ -161,6 +161,7 @@ router.post("/analyze", async (req: Request, res: Response) => {
           organSystems: reasoning.organSystems ?? [],
           criticalValues: reasoning.criticalValues ?? [],
           psychiatricSummary: reasoning.psychiatricSummary ?? null,
+          summaryStats,
           clinicalConclusion: reasoning.clinicalConclusion ?? null,
           possibleConditions: reasoning.possibleConditions ?? [],
           riskAssessment: reasoning.riskAssessment ?? null,

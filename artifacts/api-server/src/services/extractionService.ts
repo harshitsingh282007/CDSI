@@ -1,36 +1,18 @@
-// Extraction service: structured data extraction from medical context
 import { callAI } from "../pipelineRouter.js";
 import { logger } from "../lib/logger.js";
+import { processLabDeduplicationAndConflicts, type ResolvedLabParameter, type LabSummaryStats } from "./labDeduplicationService.js";
+import type { LabParameter, PrescriptionItem } from "../types/report.js";
 
-export interface LabParameter {
-  name: string;
-  value: string;
-  unit: string | null;
-  referenceRange: string | null;
-  status: "normal" | "high" | "low" | "critical" | "borderline";
-  interpretation: string | null;
-  panel: string | null;
-}
-
-export interface PrescriptionItem {
-  medicineName: string;
-  brandName: string | null;
-  genericName: string | null;
-  dosage: string | null;
-  frequency: string | null;
-  duration: string | null;
-  timing: string | null;
-  route: string | null;
-  specialInstructions: string | null;
-}
+export type { LabParameter, PrescriptionItem };
 
 export interface StructuredExtractionResult {
-  labParameters: LabParameter[];
+  labParameters: ResolvedLabParameter[];
   prescriptions: PrescriptionItem[];
   patientName: string | null;
   patientAge: number | null;
   patientSex: string | null;
   extractionErrors: string[];
+  summaryStats: LabSummaryStats;
 }
 
 const LAB_SYSTEM_PROMPT = `You are an expert medical data extraction AI specialized in interpreting both digital lab reports and messy handwritten doctor prescriptions, camera-captured document photos, and scanned medical notes.
@@ -569,10 +551,16 @@ ${fullText.slice(0, 15000)}
     }
   }
 
-  const finalLabs = deduplicateLabs(allLabs);
+  const dedupResult = processLabDeduplicationAndConflicts(allLabs);
+  const finalLabs = dedupResult.resolvedLabs;
   const finalPrescriptions = deduplicatePrescriptions(allPrescriptions);
 
-  logger.info({ finalLabCount: finalLabs.length, finalMedCount: finalPrescriptions.length, errors: errors.length }, "Extraction complete");
+  logger.info({
+    finalLabCount: finalLabs.length,
+    finalMedCount: finalPrescriptions.length,
+    summaryStats: dedupResult.summaryStats,
+    errors: errors.length,
+  }, "Extraction and deduplication complete");
 
   return {
     labParameters: finalLabs,
@@ -581,6 +569,7 @@ ${fullText.slice(0, 15000)}
     patientAge: patientAge || patientInfo.age,
     patientSex: patientSex || patientInfo.sex,
     extractionErrors: errors,
+    summaryStats: dedupResult.summaryStats,
   };
 }
 

@@ -8,6 +8,30 @@ export interface PatientSummary {
   analysisType: string;
 }
 
+export interface SourceExtraction {
+  rawName: string;
+  rawValue: string;
+  rawUnit: string | null;
+  sourceDocument?: string | null;
+  sourcePage?: number | null;
+}
+
+export interface ConflictDetails {
+  rawValues: string[];
+  sourceExtractions: SourceExtraction[];
+  reason: string;
+}
+
+export interface LabSummaryStats {
+  totalAnalyzed: number;
+  totalExtractedRaw: number;
+  mergedCount: number;
+  abnormalCount: number;
+  criticalCount: number;
+  normalCount: number;
+  conflictingCount: number;
+}
+
 export interface LabParameter {
   name: string;
   value: string;
@@ -16,6 +40,10 @@ export interface LabParameter {
   status: "normal" | "high" | "low" | "critical" | "borderline";
   interpretation: string | null;
   panel: string | null;
+  canonicalKey?: string;
+  isConflicting?: boolean;
+  conflictDetails?: ConflictDetails | null;
+  sourceExtractions?: SourceExtraction[];
 }
 
 export interface PrescriptionItem {
@@ -81,6 +109,7 @@ export interface ClinicalReport {
   organSystems: OrganSystemStatus[];
   criticalValues: string[];
   psychiatricSummary: PsychiatricSummary | null;
+  summaryStats?: LabSummaryStats;
   // Detailed clinical narrative fields
   clinicalConclusion: string | null;
   possibleConditions: string[];
